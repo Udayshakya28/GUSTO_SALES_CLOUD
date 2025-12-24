@@ -3,12 +3,11 @@ import { db } from '@/lib/db';
 
 export async function PUT(
     request: Request,
-    { params }: { params: { webhookId: string } }
+    { params }: { params: Promise<{ webhookId: string }> }
 ) {
     try {
-        // Await the params object
-        const resolvedParams = await Promise.resolve(params);
-        const webhookId = resolvedParams.webhookId;
+        // Await the params object (Next.js 15 requires params to be a Promise)
+        const { webhookId } = await params;
 
         const body = await request.json();
         const updated = db.updateWebhook(webhookId, body);
@@ -25,12 +24,11 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { webhookId: string } }
+    { params }: { params: Promise<{ webhookId: string }> }
 ) {
     try {
-        // Await the params object
-        const resolvedParams = await Promise.resolve(params);
-        const webhookId = resolvedParams.webhookId;
+        // Await the params object (Next.js 15 requires params to be a Promise)
+        const { webhookId } = await params;
 
         const success = db.deleteWebhook(webhookId);
 

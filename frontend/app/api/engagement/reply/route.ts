@@ -51,7 +51,9 @@ export async function POST(request: Request) {
 
             if (r) {
                 try {
-                    const reply = await r.getSubmission(leadId).reply(content);
+                    const submission = r.getSubmission(leadId);
+                    // @ts-ignore - TypeScript circular reference issue with snoowrap types
+                    const reply = await submission.reply(content);
                     db.updateLeadStatus(leadId, 'replied');
                     return NextResponse.json({ message: 'Reply posted', redditId: reply.id });
                 } catch (apiError: any) {
@@ -96,7 +98,9 @@ export async function POST(request: Request) {
                                     accessToken: innerToken.accessToken
                                 });
 
-                                const reply = await r.getSubmission(leadId).reply(content);
+                                const submission = r.getSubmission(leadId);
+                                // @ts-ignore - TypeScript circular reference issue with snoowrap types
+                                const reply = await submission.reply(content);
                                 db.updateLeadStatus(leadId, 'replied');
                                 return NextResponse.json({ message: 'Reply posted', redditId: reply.id });
                             }
@@ -126,7 +130,9 @@ export async function POST(request: Request) {
             refreshToken,
         });
 
-        const reply = await r.getSubmission(leadId).reply(content);
+        const submission = r.getSubmission(leadId);
+        // @ts-ignore - TypeScript circular reference issue with snoowrap types
+        const reply = await submission.reply(content);
         db.updateLeadStatus(leadId, 'replied');
 
         return NextResponse.json({

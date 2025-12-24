@@ -3,12 +3,11 @@ import { db } from '@/lib/db';
 
 export async function POST(
     request: Request,
-    { params }: { params: { webhookId: string } }
+    { params }: { params: Promise<{ webhookId: string }> }
 ) {
     try {
-        // Await the params object
-        const resolvedParams = await Promise.resolve(params);
-        const webhookId = resolvedParams.webhookId;
+        // Await the params object (Next.js 15 requires params to be a Promise)
+        const { webhookId } = await params;
 
         const webhooks = db.getWebhooks();
         const webhook = webhooks.find(w => w.id === webhookId);

@@ -12,3 +12,6 @@ if (typeof global.setTimeout === 'function') {
         return originalSetTimeout(cb, ms, ...args);
     };
 }
+
+// Export empty object to make this a module
+export {};

@@ -1,4 +1,3 @@
-```typescript
 import { NextResponse } from 'next/server';
 import { getGroqClient, isGroqError } from '@/lib/groq';
 
