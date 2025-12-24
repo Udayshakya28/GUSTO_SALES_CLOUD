@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                    @id @default(cuid())
+  email                   String                    @unique
+  firstName               String?
+  lastName                String?
+  plan                    String                    @default("free")
+  subscriptionStatus      String?
+  lastKarmaCheck          DateTime?
+  redditKarma             Int?                      @default(0)
+  redditRefreshToken      String?
+  redditUsername          String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  redditAuthState         String?                   @unique
+  hasConnectedReddit      Boolean                   @default(false)
+  AIUsage                 AIUsage[]
+  campaigns               Campaign[]
+  leads                   Lead[]
+  MarketInsight           MarketInsight[]
+  scheduledReplies        ScheduledReply[]
+  webhooks                Webhook[]
+  emailNotificationSetting EmailNotificationSetting?
+  subscriptionEndsAt       DateTime?
+}
+// ✨ NEW MODEL ADDED FOR EMAIL NOTIFICATIONS ✨
+model EmailNotificationSetting {
+  id      String  @id @default(cuid())
+  email   String
+  enabled Boolean @default(false)
+  userId  String  @unique // Each user has one setting
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id               String    @id @default(cuid())
+  name             String
+  url              String
+  type             String
+  isActive         Boolean   @default(true)
+  events           String[]
+  userId           String
+  createdAt        DateTime  @default(now())
+  lastTriggered    DateTime?
+  lastSentAt       DateTime?
+  filters          Json?
+  rateLimitMinutes Int?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}
+
+model Campaign {
+  id                    String          @id @default(cuid())
+  userId                String
+  analyzedUrl           String
+  generatedKeywords     String[]
+  generatedDescription  String
+  targetSubreddits      String[]        @default([])
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  competitors           String[]        @default([])
+  name                  String          @default("Untitled Campaign")
+  isActive              Boolean         @default(true)
+  negativeKeywords      String[]        @default([])
+  subredditBlacklist    String[]        @default([])
+  lastManualDiscoveryAt DateTime?
+  lastGlobalDiscoverAt    DateTime?
+  lastTargetedDiscoveryAt  DateTime?
+  user                  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leads                 Lead[]
+  MarketInsight         MarketInsight[]
+
+  @@index([userId])
+}
+
+model Lead {
+  id                 String           @id @default(cuid())
+  redditId           String           @unique
+  title              String
+  author             String
+  subreddit          String
+  url                String           @unique
+  body               String?
+  postedAt           DateTime
+  discoveredAt       DateTime         @default(now())
+  opportunityScore   Int
+  status             String           @default("new")
+  campaignId         String
+  intent             String?
+  userId             String
+  createdAt          DateTime         @default(now())
+  sentiment          String?
+  type               LeadType         @default(DIRECT_LEAD)
+  updatedAt          DateTime         @updatedAt
+  insightAnalysisRan Boolean          @default(false)
+  summary            String?
+  isGoogleRanked     Boolean?         @default(false)
+  campaign           Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledReplies   ScheduledReply[]
+
+  @@unique([id, userId])
+    @@unique([redditId, campaignId])    
+  @@index([userId])
+  @@index([campaignId])
+}
+
+model ScheduledReply {
+  id            String               @id @default(cuid())
+  content       String
+  status        ScheduledReplyStatus @default(PENDING)
+  scheduledAt   DateTime?
+  postedAt      DateTime?
+  redditPostId  String?
+  failReason    String?
+  leadId        String
+  userId        String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  upvotes       Int?                 @default(0)
+  authorReplied Boolean?             @default(false)
+  lastCheckedAt DateTime?
+  lead          Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+}
+
+model SubredditProfile {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  rules            String[] @default([])
+  cultureNotes     String?
+  peakActivityTime String?
+  lastAnalyzedAt   DateTime @updatedAt
+}
+
+model MarketInsight {
+  id                       String        @id @default(cuid())
+  discoveredCompetitorName String
+  sourceUrl                String
+  sourceTextSnippet        String
+  context                  String
+  status                   InsightStatus @default(NEW)
+  userId                   String
+  campaignId               String
+  discoveredAt             DateTime      @default(now())
+  campaign                 Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, discoveredCompetitorName])
+  @@index([campaignId])
+  @@index([userId])
+}
+
+model AIUsage {
+  id     String @id @default(cuid())
+  userId String
+  month  String
+  type   String
+  count  Int    @default(0)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, type], name: "userId_month_type")
+}
+
+enum ScheduledReplyStatus {
+  PENDING
+  POSTED
+  FAILED
+  CANCELLED
+    PENDING_MANUAL_POST
+}
+
+enum LeadType {
+  DIRECT_LEAD
+  COMPETITOR_MENTION
+}
+
+enum InsightStatus {
+  NEW
+  VIEWED
+  ACTIONED
+  IGNORED
+}
