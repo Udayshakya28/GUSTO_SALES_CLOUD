@@ -1,0 +1,21 @@
+steps:
+  # Build the container image with build args
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${_NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/redlead-dashboard:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/redlead-dashboard:latest'
+      - '.'
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/redlead-dashboard:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/redlead-dashboard:latest'
