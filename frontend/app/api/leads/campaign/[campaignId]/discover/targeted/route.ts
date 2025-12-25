@@ -66,19 +66,33 @@ export async function POST(
 
                 // Create abort controller for timeout
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for Vercel
+
+                // Reddit's public API requires a proper User-Agent header
+                const userAgent = process.env.REDDIT_USER_AGENT || 
+                    'web:RedLead:1.0.0 (by /u/RedLeadApp)';
 
                 const res = await fetch(url, { 
                     headers: { 
-                        'User-Agent': process.env.REDDIT_USER_AGENT || 'RedLead/1.0.0 (by /u/RedLeadApp)'
+                        'User-Agent': userAgent,
+                        'Accept': 'application/json',
+                        'Accept-Language': 'en-US,en;q=0.9',
                     },
-                    signal: controller.signal
+                    signal: controller.signal,
+                    cache: 'no-store',
                 });
                 
                 clearTimeout(timeoutId);
 
                 if (!res.ok) {
-                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`);
+                    const errorText = await res.text().catch(() => 'Unknown error');
+                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`, errorText);
+                    
+                    // If rate limited (429), wait a bit before continuing
+                    if (res.status === 429) {
+                        console.warn('Rate limited by Reddit, waiting 2 seconds...');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
                     continue;
                 }
 

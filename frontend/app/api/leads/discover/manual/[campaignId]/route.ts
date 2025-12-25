@@ -2,6 +2,23 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getGroqClient, handleGroqError } from '@/lib/groq';
 
+// Route segment config for Vercel
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 60 seconds max for discovery
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
+}
+
 async function calculateOpportunityScore(title: string, body: string, keywords: string[]): Promise<number> {
     // Get client at runtime to ensure env vars are loaded
     const groq = getGroqClient();
@@ -23,8 +40,6 @@ async function calculateOpportunityScore(title: string, body: string, keywords: 
         return handleGroqError(e, 50);
     }
 }
-
-export const runtime = 'nodejs'; // Ensure this runs on Node.js runtime for Vercel
 
 export async function POST(
     request: Request,
@@ -55,27 +70,45 @@ export async function POST(
 
         const discoveredLeads: any[] = [];
 
-        // Simulate search via Reddit Public API (as a "Gateway")
+        // Search via Reddit Public JSON API (no authentication required)
+        // Reddit's public API allows reading posts without credentials
         for (const sub of targetSubreddits) {
             try {
                 const query = generatedKeywords[0];
+                // Reddit's public JSON API endpoint - accessible without authentication
                 const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&limit=5`;
 
                 // Create abort controller for timeout
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for Vercel
+                
+                // Reddit's public API requires a proper User-Agent header
+                // Format: "platform:appid:version (by /u/username)"
+                const userAgent = process.env.REDDIT_USER_AGENT || 
+                    'web:RedLead:1.0.0 (by /u/RedLeadApp)';
                 
                 const res = await fetch(url, { 
                     headers: { 
-                        'User-Agent': process.env.REDDIT_USER_AGENT || 'RedLead/1.0.0 (by /u/RedLeadApp)'
+                        'User-Agent': userAgent,
+                        'Accept': 'application/json',
+                        'Accept-Language': 'en-US,en;q=0.9',
                     },
-                    signal: controller.signal
+                    signal: controller.signal,
+                    // Add cache control to avoid stale data
+                    cache: 'no-store',
                 });
                 
                 clearTimeout(timeoutId);
                 
                 if (!res.ok) {
-                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`);
+                    const errorText = await res.text().catch(() => 'Unknown error');
+                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`, errorText);
+                    
+                    // If rate limited (429), wait a bit before continuing
+                    if (res.status === 429) {
+                        console.warn('Rate limited by Reddit, waiting 2 seconds...');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
                     continue;
                 }
 

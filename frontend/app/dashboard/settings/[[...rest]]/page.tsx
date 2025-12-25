@@ -9,6 +9,7 @@ import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { SettingsSidebarNav } from "@/components/settings/SettingsSidebar";
 import { EmailSettings } from "@/components/settings/EmailSettings";
 import { AccountSettings } from "@/components/settings/AccountSettings";
+import { RedditConnection } from "@/components/dashboard/RedditSettings";
 
 // Main component for the settings page
 export default function SettingsPage() {
@@ -30,6 +31,16 @@ export default function SettingsPage() {
         return <AccountSettings/>; // Assuming Account settings are similar to Profile
       case "email":
         return <EmailSettings />;
+      case "reddit":
+        return (
+          <div>
+            <h3 className="text-lg font-medium mb-2">Reddit Integration</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Connect your Reddit account to enable posting replies to discovered leads.
+            </p>
+            <RedditConnection />
+          </div>
+        );
       default:
         return <ProfileSettings />;
     }

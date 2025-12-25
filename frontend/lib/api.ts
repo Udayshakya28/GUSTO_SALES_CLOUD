@@ -152,21 +152,12 @@ export const api = {
     return response.json();
   },
 
-  // Reddit authentication
-  getRedditAuthUrl: async (token: string | null) => {
-    const response = await fetch(`${API_BASE_URL}/api/reddit/auth`, {
+  // Reddit authentication status (DEVVIT_TOKEN based)
+  getRedditStatus: async (token: string | null) => {
+    const response = await fetch(`${API_BASE_URL}/api/reddit/status`, {
       headers: getAuthHeaders(token)
     });
-    if (!response.ok) throw new Error('Failed to get Reddit auth URL');
-    return response.json();
-  },
-
-  disconnectReddit: async (token: string | null) => {
-    const response = await fetch(`${API_BASE_URL}/api/reddit/disconnect`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(token)
-    });
-    if (!response.ok) throw new Error('Failed to disconnect Reddit account');
+    if (!response.ok) throw new Error('Failed to get Reddit status');
     return response.json();
   },
 

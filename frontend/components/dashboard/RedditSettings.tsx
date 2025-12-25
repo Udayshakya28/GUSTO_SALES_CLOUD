@@ -1,64 +1,59 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { ExternalLink, Check, AlertCircle, User, Loader } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ExternalLink, Check, AlertCircle, User, RefreshCw, Info } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useAuth, useUser } from '@clerk/nextjs'; // Import Clerk hooks
+import { useAuth } from '@clerk/nextjs';
 
 interface RedditConnectionProps {
   onConnectionChange?: (connected: boolean) => void;
 }
 
-export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) => {
-  // Use Clerk hooks to get user data and authentication methods
-  const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+interface RedditStatus {
+  connected: boolean;
+  method: 'devvit';
+  username?: string;
+  karma?: number;
+  verified?: boolean;
+  message?: string;
+  error?: string;
+}
 
-  const [isConnecting, setIsConnecting] = useState(false);
+export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) => {
+  const { getToken } = useAuth();
+  const [status, setStatus] = useState<RedditStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // The user object from useUser already contains the latest data,
-  // so a separate fetchUser call is no longer needed.
-  useEffect(() => {
-    if (isLoaded) {
-      onConnectionChange?.(!!user?.publicMetadata.redditRefreshToken);
-    }
-  }, [isLoaded, user, onConnectionChange]);
-
-
-  // Connect Reddit account
-  const connectReddit = async () => {
+  // Fetch Reddit connection status
+  const fetchStatus = useCallback(async () => {
     try {
-      setIsConnecting(true);
+      setIsRefreshing(true);
       setError(null);
       const token = await getToken();
-      
-      // Get Reddit OAuth URL from our secure backend
-      const response = await api.getRedditAuthUrl(token);
-      
-      // Redirect to Reddit OAuth
-      window.location.href = response.authUrl;
+      const response = await api.getRedditStatus(token);
+      setStatus(response);
+      onConnectionChange?.(response.connected);
     } catch (err: any) {
-      setError(err.message);
-      setIsConnecting(false);
+      setError(err.message || 'Failed to check Reddit connection status');
+      setStatus({
+        connected: false,
+        method: 'devvit',
+        message: 'Failed to check status',
+        error: err.message
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [getToken, onConnectionChange]);
 
-  // Disconnect Reddit account
-  const disconnectReddit = async () => {
-    try {
-      const token = await getToken();
-      await api.disconnectReddit(token);
-      // Clerk's useUser hook will automatically update, causing a re-render.
-      // We may need to manually trigger a re-fetch of the user if metadata isn't live.
-      // For now, a page refresh after disconnect might be the simplest UX.
-      window.location.reload();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
 
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div className="bg-[#1a1a1b] rounded-lg border border-[#343536] p-6">
         <div className="animate-pulse">
@@ -70,12 +65,9 @@ export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) 
     );
   }
 
-  // NOTE: We now need to get custom data like 'redditRefreshToken' from Clerk's user.publicMetadata.
-  // You would need to save this data to Clerk when the user connects their account.
-  // For this example, I'll assume it's stored there.
-  const isConnected = !!user?.publicMetadata.redditRefreshToken;
-  const redditUsername = user?.publicMetadata.redditUsername as string || 'user';
-  const redditKarma = user?.publicMetadata.redditKarma as number || 0;
+  const isConnected = status?.connected || false;
+  const redditUsername = status?.username || 'user';
+  const redditKarma = status?.karma || 0;
 
   return (
     <div className="bg-[#1a1a1b] rounded-lg border border-[#343536] p-6">
@@ -120,6 +112,20 @@ export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) 
         </div>
       )}
 
+      {status?.error && !isConnected && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-yellow-400 text-sm font-medium">{status.message}</p>
+              {status.error && (
+                <p className="text-yellow-300/80 text-xs mt-1">{status.error}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isConnected ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-[#272729] rounded-lg">
@@ -151,38 +157,66 @@ export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) 
             </span>
           </div>
 
+          {status?.verified && (
+            <div className="flex items-center gap-2 p-3 bg-[#272729] rounded-lg">
+              <Check className="w-4 h-4 text-green-400" />
+              <span className="text-sm text-gray-300">Email verified</span>
+            </div>
+          )}
+
           <button
-            onClick={disconnectReddit}
-            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+            onClick={fetchStatus}
+            disabled={isRefreshing}
+            className="w-full px-4 py-2 bg-[#272729] text-white rounded-lg hover:bg-[#343536] transition-colors text-sm flex items-center justify-center gap-2"
           >
-            Disconnect Reddit Account
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
           </button>
         </div>
       ) : (
-        <button
-          onClick={connectReddit}
-          disabled={isConnecting}
-          className="w-full px-4 py-2 bg-[#ff4500] text-white rounded-lg hover:bg-[#ff5722] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {isConnecting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Connecting...
-            </>
-          ) : (
-            <>
-              <ExternalLink className="w-4 h-4" />
-              Connect Reddit Account
-            </>
-          )}
-        </button>
+        <div className="space-y-3">
+          <div className="p-4 bg-[#272729] rounded-lg border border-[#343536]">
+            <div className="flex items-start gap-3 mb-3">
+              <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-white mb-2">Setup DEVVIT_TOKEN</h4>
+                <p className="text-xs text-gray-400 mb-3">
+                  This app uses Devvit authentication to connect to Reddit. You need to configure the DEVVIT_TOKEN environment variable.
+                </p>
+                <div className="space-y-2 text-xs text-gray-300">
+                  <p><strong className="text-white">Step 1:</strong> Run <code className="bg-[#1a1a1b] px-1.5 py-0.5 rounded">npx devvit login</code> in your terminal</p>
+                  <p><strong className="text-white">Step 2:</strong> Run <code className="bg-[#1a1a1b] px-1.5 py-0.5 rounded">find_token.ps1</code> (Windows) or check <code className="bg-[#1a1a1b] px-1.5 py-0.5 rounded">~/.devvit/token</code></p>
+                  <p><strong className="text-white">Step 3:</strong> Add <code className="bg-[#1a1a1b] px-1.5 py-0.5 rounded">DEVVIT_TOKEN</code> to your Vercel environment variables</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchStatus}
+            disabled={isRefreshing}
+            className="w-full px-4 py-2 bg-[#ff4500] text-white rounded-lg hover:bg-[#ff5722] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isRefreshing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Checking...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Check Connection Status
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {!isConnected && (
         <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <p className="text-xs text-blue-400">
-            <strong>Why connect?</strong> You need a Reddit account to post replies. 
-            We use your account to authenticate with Reddit's API securely.
+            <strong>Why connect?</strong> You need a Reddit account configured via DEVVIT_TOKEN to post replies. 
+            The token is stored securely as an environment variable on your server.
           </p>
         </div>
       )}
