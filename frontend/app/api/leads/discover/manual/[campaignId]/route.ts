@@ -299,14 +299,14 @@ export async function POST(
                 let filteredPosts = posts;
                 if (!successfulEndpoint.includes('search.json')) {
                     // Filter posts that match any keyword
-                    const keywordLower = generatedKeywords.map(k => k.toLowerCase());
+                    const keywordLower = generatedKeywords.map((k: string) => k.toLowerCase());
                     filteredPosts = posts.filter((child: any) => {
                         if (!child?.data) return false;
                         const post = child.data;
                         const titleLower = (post.title || '').toLowerCase();
                         const bodyLower = (post.selftext || '').toLowerCase();
                         const text = `${titleLower} ${bodyLower}`;
-                        return keywordLower.some(keyword => text.includes(keyword));
+                        return keywordLower.some((keyword: string) => text.includes(keyword));
                     });
                     console.log(`📊 Filtered ${filteredPosts.length} posts from ${posts.length} total for r/${sub} using keywords`);
                 }
@@ -413,7 +413,7 @@ export async function POST(
                                 userId: userId,
                                 campaignId: campaignId
                             });
-                        });
+                        }
                         savedCount++;
                     } catch (error: any) {
                         // Skip duplicates or other errors

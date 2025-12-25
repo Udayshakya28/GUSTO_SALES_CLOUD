@@ -83,7 +83,7 @@ export async function GET(
                         orderBy: { discoveredAt: 'desc' }
                     });
                     console.log(`📊 Leads found without userId filter: ${allCampaignLeads.length}`);
-                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 3).map(l => ({ id: l.id, userId: l.userId })));
+                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 3).map((l: any) => ({ id: l.id, userId: l.userId })));
                     
                     // Use all leads if campaign exists and belongs to user
                     if (campaign && campaign.userId === userId) {
