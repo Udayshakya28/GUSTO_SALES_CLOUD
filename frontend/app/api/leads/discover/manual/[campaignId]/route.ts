@@ -140,8 +140,20 @@ export async function POST(
                 if (!res.ok) {
                     const errorText = await res.text().catch(() => 'Unknown error');
                     const errorMsg = `Reddit API error for r/${sub}: ${res.status} ${res.statusText}`;
-                    console.error(errorMsg, errorText);
-                    diagnostics.errors.push({ subreddit: sub, error: errorMsg, status: res.status });
+                    console.error(`❌ Reddit API error for r/${sub}:`, {
+                        status: res.status,
+                        statusText: res.statusText,
+                        errorText: errorText.substring(0, 500), // Limit error text length
+                        url: url
+                    });
+                    diagnostics.errors.push({ 
+                        subreddit: sub, 
+                        error: errorMsg, 
+                        status: res.status,
+                        statusText: res.statusText,
+                        errorText: errorText.substring(0, 200),
+                        url: url
+                    });
                     
                     // If rate limited (429), wait a bit before continuing
                     if (res.status === 429) {

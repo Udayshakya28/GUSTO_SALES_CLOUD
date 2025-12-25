@@ -166,7 +166,38 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
         if (result?.diagnostics) {
           console.log('🔍 Full diagnostics:', result.diagnostics);
           if (result.diagnostics.errors && result.diagnostics.errors.length > 0) {
-            console.error('❌ Errors encountered:', result.diagnostics.errors);
+            console.error('❌ Reddit API Errors encountered:', result.diagnostics.errors);
+            // Show detailed error information
+            result.diagnostics.errors.forEach((err: any, index: number) => {
+              console.error(`  Error ${index + 1}:`, {
+                subreddit: err.subreddit,
+                status: err.status,
+                statusText: err.statusText,
+                error: err.error,
+                errorText: err.errorText,
+                url: err.url
+              });
+            });
+            
+            // Show user-friendly error message
+            const firstError = result.diagnostics.errors[0];
+            if (firstError?.status === 403 || firstError?.status === 401) {
+              toast.error('Reddit API Access Denied', {
+                description: `Reddit returned ${firstError.status} for r/${firstError.subreddit}. Check User-Agent header.`
+              });
+            } else if (firstError?.status === 429) {
+              toast.error('Reddit Rate Limited', {
+                description: 'Too many requests to Reddit API. Please wait a moment and try again.'
+              });
+            } else if (firstError?.status === 404) {
+              toast.error('Subreddit Not Found', {
+                description: `Subreddit r/${firstError.subreddit} may not exist or is private.`
+              });
+            } else {
+              toast.error('Reddit API Error', {
+                description: `Failed to fetch from Reddit: ${firstError?.error || 'Unknown error'}`
+              });
+            }
           }
           if (result.diagnostics.postsFound === 0) {
             console.warn('⚠️ No posts found from Reddit API. Check subreddits and keywords.');
