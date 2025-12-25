@@ -107,13 +107,22 @@ export async function POST(
 
         // Search via Reddit Public JSON API (no authentication required)
         // Reddit's public API allows reading posts without credentials
+        // NOTE: Reddit blocks requests from cloud providers (Vercel, AWS Lambda, etc.)
+        // We'll try multiple endpoints and filter posts client-side if search is blocked
         for (const sub of targetSubreddits) {
             try {
                 const query = generatedKeywords[0];
-                // Reddit's public JSON API endpoint - accessible without authentication
-                const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&limit=5`;
-
-                diagnostics.subredditsSearched.push({ subreddit: sub, query, url });
+                
+                // Try multiple endpoints - Reddit may block search.json but allow other endpoints
+                const endpoints = [
+                    { url: `https://www.reddit.com/r/${sub}/new.json?limit=25`, type: 'new' },
+                    { url: `https://www.reddit.com/r/${sub}/hot.json?limit=25`, type: 'hot' },
+                    { url: `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&limit=25`, type: 'search' },
+                ];
+                
+                let res: Response | null = null;
+                let successfulEndpoint: string = '';
+                let lastError: any = null;
 
                 // Create abort controller for timeout
                 const controller = new AbortController();
@@ -125,59 +134,82 @@ export async function POST(
                 const userAgent = process.env.REDDIT_USER_AGENT || 
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
                 
-                // Add a small delay between requests to avoid rate limiting
+                // Add a small delay between subreddits to avoid rate limiting
                 if (diagnostics.subredditsSearched.length > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 
-                const res = await fetch(url, { 
-                    headers: { 
-                        'User-Agent': userAgent,
-                        'Accept': 'application/json',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Referer': `https://www.reddit.com/r/${sub}/`,
-                        'Origin': 'https://www.reddit.com',
-                    },
-                    signal: controller.signal,
-                    // Add cache control to avoid stale data
-                    cache: 'no-store',
-                    // Add redirect handling
-                    redirect: 'follow',
-                });
+                // Try each endpoint until one works
+                for (const endpoint of endpoints) {
+                    try {
+                        diagnostics.subredditsSearched.push({ 
+                            subreddit: sub, 
+                            query, 
+                            url: endpoint.url, 
+                            type: endpoint.type 
+                        });
+                        
+                        // Create abort controller for timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
+                        
+                        res = await fetch(endpoint.url, { 
+                            headers: { 
+                                'User-Agent': userAgent,
+                                'Accept': 'application/json',
+                                'Accept-Language': 'en-US,en;q=0.9',
+                                'Referer': `https://www.reddit.com/r/${sub}/`,
+                                'Origin': 'https://www.reddit.com',
+                            },
+                            signal: controller.signal,
+                            cache: 'no-store',
+                            redirect: 'follow',
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (res.ok) {
+                            successfulEndpoint = endpoint.url;
+                            console.log(`✅ Successfully fetched from r/${sub} using ${endpoint.type} endpoint`);
+                            break; // Success, exit the loop
+                        } else {
+                            lastError = { 
+                                status: res.status, 
+                                statusText: res.statusText, 
+                                url: endpoint.url,
+                                type: endpoint.type
+                            };
+                            console.warn(`❌ Failed ${endpoint.type} endpoint for r/${sub}: ${res.status} ${res.statusText}`);
+                        }
+                    } catch (e: any) {
+                        lastError = { error: e.message, url: endpoint.url, type: endpoint.type };
+                        console.warn(`❌ Error with ${endpoint.type} endpoint for r/${sub}:`, e.message);
+                        continue; // Try next endpoint
+                    }
+                }
                 
-                clearTimeout(timeoutId);
-                
-                if (!res.ok) {
-                    const errorText = await res.text().catch(() => 'Unknown error');
-                    const errorMsg = `Reddit API error for r/${sub}: ${res.status} ${res.statusText}`;
-                    console.error(`❌ Reddit API error for r/${sub}:`, {
-                        status: res.status,
-                        statusText: res.statusText,
-                        errorText: errorText.substring(0, 500), // Limit error text length
-                        url: url
+                // If all endpoints failed
+                if (!res || !res.ok) {
+                    const errorText = lastError?.error || `All endpoints failed (last: ${lastError?.status || 'unknown'})`;
+                    const errorMsg = `Reddit API error for r/${sub}: ${res?.status || 'Network'} ${res?.statusText || errorText}`;
+                    console.error(`❌ All Reddit endpoints failed for r/${sub}:`, {
+                        status: res?.status,
+                        statusText: res?.statusText,
+                        endpoints: endpoints.map(e => `${e.type}: ${e.url}`),
+                        lastError
                     });
                     diagnostics.errors.push({ 
                         subreddit: sub, 
                         error: errorMsg, 
-                        status: res.status,
-                        statusText: res.statusText,
-                        errorText: errorText.substring(0, 200),
-                        url: url
+                        status: res?.status || 0,
+                        statusText: res?.statusText || errorText,
+                        endpoints: endpoints.map(e => e.type),
+                        allBlocked: res?.status === 403
                     });
                     
-                    // If rate limited (429), wait a bit before continuing
-                    if (res.status === 429) {
-                        console.warn('Rate limited by Reddit, waiting 2 seconds...');
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    if (res?.status === 403) {
+                        console.warn(`⚠️ Reddit blocked all endpoints for r/${sub} - Vercel IP blocking`);
                     }
-                    
-                    // If blocked (403), this is likely due to Reddit blocking serverless IPs
-                    // This is a known issue with Reddit's public API from cloud providers
-                    if (res.status === 403) {
-                        console.warn(`⚠️ Reddit blocked request to r/${sub} - likely due to Vercel IP blocking`);
-                    }
-                    
                     continue;
                 }
 
@@ -191,9 +223,27 @@ export async function POST(
                 }
 
                 const posts = data.data.children;
-                diagnostics.postsFound += posts.length;
+                
+                // Filter posts by keywords if we're using new/hot endpoints (not search)
+                // Search endpoint already filters by query, but new/hot don't
+                let filteredPosts = posts;
+                if (!successfulEndpoint.includes('search.json')) {
+                    // Filter posts that match any keyword
+                    const keywordLower = generatedKeywords.map(k => k.toLowerCase());
+                    filteredPosts = posts.filter((child: any) => {
+                        if (!child?.data) return false;
+                        const post = child.data;
+                        const titleLower = (post.title || '').toLowerCase();
+                        const bodyLower = (post.selftext || '').toLowerCase();
+                        const text = `${titleLower} ${bodyLower}`;
+                        return keywordLower.some(keyword => text.includes(keyword));
+                    });
+                    console.log(`📊 Filtered ${filteredPosts.length} posts from ${posts.length} total for r/${sub} using keywords`);
+                }
+                
+                diagnostics.postsFound += filteredPosts.length;
 
-                for (const child of posts) {
+                for (const child of filteredPosts) {
                     if (!child || !child.data) continue;
                     
                     const post = child.data;
