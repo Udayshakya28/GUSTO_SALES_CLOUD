@@ -22,8 +22,21 @@ try {
     prisma: any;
   };
 
+  // For Supabase pooled connections, add ?pgbouncer=true to disable prepared statements
+  // This fixes "prepared statement already exists" error
+  let databaseUrl = process.env.DATABASE_URL || '';
+  
+  if (databaseUrl.includes('pooler.supabase.com') && !databaseUrl.includes('pgbouncer=true')) {
+    databaseUrl += (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true';
+  }
+  
   prismaInstance = globalForPrisma.prisma ?? new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    datasources: {
+      db: {
+        url: databaseUrl
+      }
+    },
   });
 
   if (process.env.NODE_ENV !== 'production') {

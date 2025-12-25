@@ -21,10 +21,28 @@ export async function GET() {
             await prisma.$connect();
             diagnostics.connectionTest = '✅ Connected';
             
-            // Test query
-            const userCount = await prisma.user.count();
-            const campaignCount = await prisma.campaign.count();
-            const leadCount = await prisma.lead.count();
+            // Test query with error handling for prepared statement issues
+            let userCount = 0;
+            let campaignCount = 0;
+            let leadCount = 0;
+            
+            try {
+                userCount = await prisma.user.count();
+            } catch (e: any) {
+                diagnostics.userCountError = e.message;
+            }
+            
+            try {
+                campaignCount = await prisma.campaign.count();
+            } catch (e: any) {
+                diagnostics.campaignCountError = e.message;
+            }
+            
+            try {
+                leadCount = await prisma.lead.count();
+            } catch (e: any) {
+                diagnostics.leadCountError = e.message;
+            }
             
             diagnostics.databaseStats = {
                 users: userCount,

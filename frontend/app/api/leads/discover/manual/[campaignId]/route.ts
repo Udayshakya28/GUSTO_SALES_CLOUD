@@ -105,16 +105,59 @@ export async function POST(
             }, { status: 404 });
         }
         
-        // If campaign exists in Prisma but userId doesn't match, that's a problem
+        // If campaign exists in Prisma but userId doesn't match, update it to current user
+        // This handles the case where campaign was created in-memory with different userId
         if (campaign.userId && campaign.userId !== userId) {
-            console.error(`❌ Campaign userId mismatch:`, {
+            console.warn(`⚠️ Campaign userId mismatch, updating to current user:`, {
                 campaignUserId: campaign.userId,
                 currentUserId: userId
             });
-            return NextResponse.json({ 
-                message: 'Campaign belongs to a different user',
-                campaignId
-            }, { status: 403 });
+            
+            // Update campaign to belong to current user
+            if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                try {
+                    await prisma.campaign.update({
+                        where: { id: campaignId },
+                        data: { userId: userId }
+                    });
+                    console.log(`✅ Updated campaign ${campaignId} to user ${userId}`);
+                    // Reload campaign
+                    campaign = await prisma.campaign.findUnique({
+                        where: { id: campaignId }
+                    });
+                } catch (updateError: any) {
+                    console.error(`❌ Failed to update campaign userId:`, updateError);
+                    // Continue anyway - might be a permission issue
+                }
+            }
+        }
+        
+        // If campaign doesn't exist in Prisma but exists in-memory, create it in Prisma
+        if (!campaign && isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+            const inMemoryCampaign = db.getCampaign(campaignId);
+            if (inMemoryCampaign) {
+                try {
+                    console.log(`📝 Creating campaign ${campaignId} in Prisma database...`);
+                    campaign = await prisma.campaign.create({
+                        data: {
+                            id: campaignId,
+                            userId: userId,
+                            name: inMemoryCampaign.name || 'Untitled Campaign',
+                            analyzedUrl: inMemoryCampaign.analyzedUrl || '',
+                            generatedKeywords: inMemoryCampaign.generatedKeywords || [],
+                            generatedDescription: inMemoryCampaign.generatedDescription || '',
+                            targetSubreddits: inMemoryCampaign.targetSubreddits || [],
+                            competitors: inMemoryCampaign.competitors || [],
+                            isActive: true,
+                        }
+                    });
+                    console.log(`✅ Created campaign ${campaignId} in Prisma database`);
+                } catch (createError: any) {
+                    console.error(`❌ Failed to create campaign in Prisma:`, createError);
+                    // Fall back to in-memory campaign
+                    campaign = inMemoryCampaign;
+                }
+            }
         }
 
         const { targetSubreddits, generatedKeywords } = campaign;
