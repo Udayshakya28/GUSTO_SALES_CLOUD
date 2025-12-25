@@ -24,63 +24,119 @@ async function calculateOpportunityScore(title: string, body: string, keywords: 
     }
 }
 
+export const runtime = 'nodejs'; // Ensure this runs on Node.js runtime for Vercel
+
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ campaignId: string }> }
 ) {
-    const { campaignId } = await params;
-    const campaign = db.getCampaign(campaignId);
-
-    if (!campaign) {
-        return NextResponse.json({ message: 'Campaign not found' }, { status: 404 });
-    }
-
-    const { targetSubreddits, generatedKeywords } = campaign;
-    const discoveredLeads: any[] = [];
-
-    console.log(`Running TARGETED discovery for ${campaignId} in subreddits: ${targetSubreddits.join(', ')}`);
-
-    // In a "targeted" discovery, we might search for more specific terms or look deeper
-    for (const sub of targetSubreddits) {
-        try {
-            // Use multiple keywords for targeted search
-            const query = generatedKeywords.slice(0, 2).join(' OR ');
-            const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&limit=10`;
-
-            const res = await fetch(url, { headers: { 'User-Agent': 'RedLeadLocal/1.0.0' } });
-            if (!res.ok) continue;
-
-            const data = await res.json();
-            const posts = data.data.children;
-
-            for (const child of posts) {
-                const post = child.data;
-                const score = await calculateOpportunityScore(post.title, post.selftext || '', generatedKeywords);
-
-                discoveredLeads.push({
-                    id: post.id,
-                    title: post.title,
-                    author: post.author,
-                    subreddit: post.subreddit,
-                    url: `https://reddit.com${post.permalink}`,
-                    body: post.selftext || '',
-                    status: 'new',
-                    intent: 'unclassified',
-                    opportunityScore: score,
-                    createdAt: post.created_utc,
-                    numComments: post.num_comments,
-                    upvoteRatio: post.upvote_ratio
-                });
-            }
-        } catch (e) {
-            console.error(`Targeted Search failed for r/${sub}:`, e);
+    try {
+        const { campaignId } = await params;
+        
+        if (!campaignId) {
+            return NextResponse.json({ message: 'Campaign ID is required' }, { status: 400 });
         }
+
+        const campaign = db.getCampaign(campaignId);
+
+        if (!campaign) {
+            return NextResponse.json({ message: 'Campaign not found' }, { status: 404 });
+        }
+
+        const { targetSubreddits, generatedKeywords } = campaign;
+        
+        if (!targetSubreddits || targetSubreddits.length === 0) {
+            return NextResponse.json({ message: 'No target subreddits configured' }, { status: 400 });
+        }
+
+        if (!generatedKeywords || generatedKeywords.length === 0) {
+            return NextResponse.json({ message: 'No keywords configured' }, { status: 400 });
+        }
+
+        const discoveredLeads: any[] = [];
+
+        console.log(`Running TARGETED discovery for ${campaignId} in subreddits: ${targetSubreddits.join(', ')}`);
+
+        // In a "targeted" discovery, we might search for more specific terms or look deeper
+        for (const sub of targetSubreddits) {
+            try {
+                // Use multiple keywords for targeted search
+                const query = generatedKeywords.slice(0, 2).join(' OR ');
+                const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&limit=10`;
+
+                // Create abort controller for timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                const res = await fetch(url, { 
+                    headers: { 
+                        'User-Agent': process.env.REDDIT_USER_AGENT || 'RedLead/1.0.0 (by /u/RedLeadApp)'
+                    },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+
+                if (!res.ok) {
+                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`);
+                    continue;
+                }
+
+                const data = await res.json();
+                
+                if (!data || !data.data || !data.data.children) {
+                    console.warn(`Invalid response format for r/${sub}`);
+                    continue;
+                }
+
+                const posts = data.data.children;
+
+                for (const child of posts) {
+                    if (!child || !child.data) continue;
+                    
+                    const post = child.data;
+                    const score = await calculateOpportunityScore(post.title, post.selftext || '', generatedKeywords);
+
+                    discoveredLeads.push({
+                        id: post.id,
+                        title: post.title,
+                        author: post.author,
+                        subreddit: post.subreddit,
+                        url: `https://reddit.com${post.permalink}`,
+                        body: post.selftext || '',
+                        status: 'new',
+                        intent: 'unclassified',
+                        opportunityScore: score,
+                        createdAt: post.created_utc,
+                        numComments: post.num_comments,
+                        upvoteRatio: post.upvote_ratio
+                    });
+                }
+            } catch (e: any) {
+                console.error(`Targeted Search failed for r/${sub}:`, e.message || e);
+                // Continue with other subreddits even if one fails
+            }
+        }
+
+        db.addLeads(campaignId, discoveredLeads);
+
+        // Update last discovery timestamp
+        db.updateCampaign(campaignId, { 
+            lastTargetedDiscoveryAt: new Date().toISOString() 
+        });
+
+        return NextResponse.json({
+            message: 'Targeted Discovery complete',
+            count: discoveredLeads.length
+        });
+    } catch (error: any) {
+        console.error('Targeted discovery route error:', error);
+        return NextResponse.json(
+            { 
+                message: 'Targeted discovery failed', 
+                error: error.message || 'Unknown error occurred' 
+            }, 
+            { status: 500 }
+        );
     }
-
-    db.addLeads(campaignId, discoveredLeads);
-
-    return NextResponse.json({
-        message: 'Targeted Discovery complete',
-        count: discoveredLeads.length
-    });
 }

@@ -1,5 +1,6 @@
 // frontend/middleware.ts
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 // Define the routes that are "public" and do not require authentication.
 // All other routes will be protected by default.
@@ -17,8 +18,15 @@ export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     const { isAuthenticated } = await auth();
     if (!isAuthenticated) {
-      // Redirect unauthenticated users to the sign-in page
-      return Response.redirect("/sign-in");
+      // For API routes, return 401 JSON instead of redirecting
+      if (req.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      // For page routes, redirect to sign-in
+      return Response.redirect(new URL("/sign-in", req.url));
     }
   }
 });
