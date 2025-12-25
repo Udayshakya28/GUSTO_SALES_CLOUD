@@ -504,6 +504,76 @@ export async function POST(
                     throw connError;
                 }
                 
+                // Ensure User exists in database (required for foreign key constraint)
+                try {
+                    const existingUser = await prisma.user.findUnique({
+                        where: { id: userId }
+                    });
+                    
+                    if (!existingUser) {
+                        console.log(`📝 User ${userId} doesn't exist, creating it...`);
+                        // Get email from Clerk if available
+                        const { currentUser } = await auth();
+                        const userEmail = currentUser?.emailAddresses?.[0]?.emailAddress || `${userId}@clerk.local`;
+                        
+                        await prisma.user.create({
+                            data: {
+                                id: userId,
+                                email: userEmail,
+                                createdAt: new Date(),
+                                updatedAt: new Date()
+                            }
+                        });
+                        console.log(`✅ Created user ${userId} in database with email ${userEmail}`);
+                    } else {
+                        console.log(`✅ User ${userId} exists in database`);
+                    }
+                } catch (userError: any) {
+                    console.error(`❌ Failed to ensure user exists:`, userError);
+                    // If it's a unique constraint error, user might already exist - continue
+                    if (userError.code === 'P2002') {
+                        console.log(`⚠️ User might already exist, continuing...`);
+                    } else {
+                        throw userError;
+                    }
+                }
+                
+                // Ensure Campaign exists in database
+                if (!campaign || !campaign.id) {
+                    console.log(`📝 Campaign ${campaignId} doesn't exist in Prisma, creating it...`);
+                    try {
+                        const inMemoryCampaign = db.getCampaign(campaignId);
+                        campaign = await prisma.campaign.create({
+                            data: {
+                                id: campaignId,
+                                userId: userId,
+                                name: inMemoryCampaign?.name || 'Untitled Campaign',
+                                analyzedUrl: inMemoryCampaign?.analyzedUrl || '',
+                                generatedKeywords: inMemoryCampaign?.generatedKeywords || [],
+                                generatedDescription: inMemoryCampaign?.generatedDescription || '',
+                                targetSubreddits: inMemoryCampaign?.targetSubreddits || [],
+                                competitors: inMemoryCampaign?.competitors || [],
+                                isActive: true,
+                            }
+                        });
+                        console.log(`✅ Created campaign ${campaignId} in Prisma`);
+                    } catch (campaignError: any) {
+                        console.error(`❌ Failed to create campaign:`, campaignError);
+                        // Continue anyway - might already exist
+                    }
+                } else if (campaign.userId !== userId) {
+                    // Update campaign userId if mismatch
+                    try {
+                        await prisma.campaign.update({
+                            where: { id: campaignId },
+                            data: { userId: userId }
+                        });
+                        console.log(`✅ Updated campaign userId to ${userId}`);
+                    } catch (updateError: any) {
+                        console.warn(`⚠️ Failed to update campaign userId:`, updateError.message);
+                    }
+                }
+                
                 // Use Prisma to save leads (upsert to avoid duplicates)
                 for (const lead of discoveredLeads) {
                     try {
