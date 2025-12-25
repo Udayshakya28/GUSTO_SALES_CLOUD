@@ -144,23 +144,36 @@ export const LeadFeed: React.FC<LeadFeedProps> = ({
 
   // Apply sorting and filtering
   const processedLeads = useMemo(() => {
+    console.log('🔄 Processing leads:', {
+      totalLeads: leads.length,
+      filters,
+      sortBy,
+      sortOrder
+    });
+    
     let filtered = [...leads];
 
     // Apply filters
     if (filters.intent.length > 0) {
       filtered = filtered.filter(lead => filters.intent.includes(lead.intent));
+      console.log(`📊 Filtered by intent (${filters.intent.join(', ')}):`, filtered.length);
     }
 
     if (filters.subreddit.length > 0) {
       filtered = filtered.filter(lead => filters.subreddit.includes(lead.subreddit));
+      console.log(`📊 Filtered by subreddit (${filters.subreddit.join(', ')}):`, filtered.length);
     }
 
     if (filters.minOpportunityScore > 0) {
+      const before = filtered.length;
       filtered = filtered.filter(lead => lead.opportunityScore >= filters.minOpportunityScore);
+      console.log(`📊 Filtered by min score (${filters.minOpportunityScore}):`, before, '->', filtered.length);
     }
 
     if (filters.minComments > 0) {
+      const before = filtered.length;
       filtered = filtered.filter(lead => lead.numComments >= filters.minComments);
+      console.log(`📊 Filtered by min comments (${filters.minComments}):`, before, '->', filtered.length);
     }
 
     // Apply sorting
@@ -173,6 +186,12 @@ export const LeadFeed: React.FC<LeadFeedProps> = ({
       } else {
         return aValue > bValue ? 1 : -1;
       }
+    });
+
+    console.log('✅ Processed leads result:', {
+      input: leads.length,
+      output: filtered.length,
+      filtersApplied: filters.intent.length + filters.subreddit.length + (filters.minOpportunityScore > 0 ? 1 : 0) + (filters.minComments > 0 ? 1 : 0)
     });
 
     return filtered;

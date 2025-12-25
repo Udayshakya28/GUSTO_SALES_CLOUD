@@ -119,11 +119,19 @@ export const DashboardLayout = () => {
         isGoogleRanked: lead.isGoogleRanked ?? false,
       }));
       setAllLeads(leadsData);
+      console.log('✅ Leads loaded:', {
+        total: leadsData.length,
+        filtered: activeFilter !== "all" ? leadsData.filter((lead) => lead.status === activeFilter).length : leadsData.length,
+        filter: activeFilter
+      });
 
       if (activeFilter !== "all") {
-        setLeads(leadsData.filter((lead) => lead.status === activeFilter));
+        const filtered = leadsData.filter((lead) => lead.status === activeFilter);
+        setLeads(filtered);
+        console.log(`📊 Filtered leads by status "${activeFilter}":`, filtered.length);
       } else {
         setLeads(leadsData);
+        console.log('📊 Showing all leads:', leadsData.length);
       }
     } catch (err: any) {
       setError(`Failed to load leads: ${err.message}`);
@@ -150,8 +158,13 @@ export const DashboardLayout = () => {
 
   const handleLeadsDiscovered = () => {
     if (activeCampaign) {
-      fetchLeads(activeCampaign);
-      fetchCampaigns();
+      console.log('📥 handleLeadsDiscovered called, refreshing leads for campaign:', activeCampaign);
+      // Add a small delay to ensure leads are saved to database before fetching
+      setTimeout(() => {
+        console.log('🔄 Fetching leads after discovery...');
+        fetchLeads(activeCampaign);
+        fetchCampaigns();
+      }, 1000);
     }
   };
 

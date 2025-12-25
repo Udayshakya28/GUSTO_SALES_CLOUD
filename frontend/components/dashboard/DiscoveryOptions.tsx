@@ -233,7 +233,11 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
         description: 'Discovered leads from across Reddit using global search'
       });
 
-      onLeadsDiscovered();
+      // Add a small delay to ensure leads are saved before refreshing
+      setTimeout(() => {
+        console.log('🔄 Refreshing leads after global discovery...');
+        onLeadsDiscovered();
+      }, 500);
     } catch (error: unknown) {
       console.error('❌ Global discovery failed:', error);
       
@@ -272,7 +276,11 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
         description: `Searched ${subredditCount} specific subreddits`
       });
 
-      onLeadsDiscovered();
+      // Add a small delay to ensure leads are saved before refreshing
+      setTimeout(() => {
+        console.log('🔄 Refreshing leads after targeted discovery...');
+        onLeadsDiscovered();
+      }, 500);
     } catch (error: unknown) {
       console.error('Targeted discovery failed:', error);
 
