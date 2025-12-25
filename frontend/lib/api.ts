@@ -65,12 +65,28 @@ export const api = {
 
   // Manual discovery
   runManualDiscovery: async (campaignId: string, token: string | null) => {
-    const response = await fetch(`${API_BASE_URL}/api/leads/discover/manual/${campaignId}`, {
-      method: 'POST',
-      headers: getAuthHeaders(token)
-    });
-    if (!response.ok) throw new Error('Failed to run manual discovery');
-    return response.json();
+    console.log('🔍 Starting manual discovery for campaign:', campaignId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/leads/discover/manual/${campaignId}`, {
+        method: 'POST',
+        headers: getAuthHeaders(token)
+      });
+      
+      console.log('📡 Discovery response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('❌ Discovery failed:', response.status, errorText);
+        throw new Error(`Failed to run manual discovery: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Discovery successful:', data);
+      return data;
+    } catch (error: any) {
+      console.error('💥 Discovery error:', error);
+      throw error;
+    }
   },
   generateReply: async (leadId: string, context: string, funMode: boolean, token: string | null) => {
     const response = await fetch(`${API_BASE_URL}/api/engagement/generate`, {

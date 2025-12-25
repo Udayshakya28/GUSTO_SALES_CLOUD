@@ -114,15 +114,21 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
 
     try {
       setIsRunningGlobal(true);
+      console.log('🚀 Starting global discovery...');
       const token = await getToken();
       
       if (!token) {
+        console.error('❌ No authentication token');
         throw new Error('Authentication token not available');
       }
 
+      console.log('📤 Calling discovery API...');
       const result = await api.runManualDiscovery(campaignId, token) as ApiResponse;
+      console.log('📥 Discovery result:', result);
 
-      const leadCount = Array.isArray(result) ? result.length : (result?.length || 0);
+      const leadCount = result?.count || (Array.isArray(result) ? result.length : (result?.length || 0));
+      
+      console.log(`✅ Found ${leadCount} leads`);
       
       toast.success(`Found ${leadCount} global leads!`, {
         description: 'Discovered leads from across Reddit using global search'
@@ -130,7 +136,7 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
 
       onLeadsDiscovered();
     } catch (error: unknown) {
-      console.error('Global discovery failed:', error);
+      console.error('❌ Global discovery failed:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
