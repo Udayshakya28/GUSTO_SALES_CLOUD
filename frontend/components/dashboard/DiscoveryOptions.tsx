@@ -181,9 +181,13 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
             
             // Show user-friendly error message
             const firstError = result.diagnostics.errors[0];
-            if (firstError?.status === 403 || firstError?.status === 401) {
+            if (firstError?.status === 403) {
+              toast.error('Reddit API Blocked (403)', {
+                description: `Reddit is blocking requests from Vercel's servers. This is a known limitation - Reddit blocks automated requests from cloud providers. Try using Reddit's official API with OAuth instead.`
+              });
+            } else if (firstError?.status === 401) {
               toast.error('Reddit API Access Denied', {
-                description: `Reddit returned ${firstError.status} for r/${firstError.subreddit}. Check User-Agent header.`
+                description: `Reddit returned 401 for r/${firstError.subreddit}. Authentication may be required.`
               });
             } else if (firstError?.status === 429) {
               toast.error('Reddit Rate Limited', {

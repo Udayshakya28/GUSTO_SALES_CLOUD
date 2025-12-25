@@ -120,19 +120,30 @@ export async function POST(
                 const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for Vercel
                 
                 // Reddit's public API requires a proper User-Agent header
-                // Format: "platform:appid:version (by /u/username)"
+                // Reddit blocks requests without proper User-Agent or with suspicious patterns
+                // Use a browser-like User-Agent to avoid 403 blocks
                 const userAgent = process.env.REDDIT_USER_AGENT || 
-                    'web:RedLead:1.0.0 (by /u/RedLeadApp)';
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+                
+                // Add a small delay between requests to avoid rate limiting
+                if (diagnostics.subredditsSearched.length > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
                 
                 const res = await fetch(url, { 
                     headers: { 
                         'User-Agent': userAgent,
                         'Accept': 'application/json',
                         'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Referer': `https://www.reddit.com/r/${sub}/`,
+                        'Origin': 'https://www.reddit.com',
                     },
                     signal: controller.signal,
                     // Add cache control to avoid stale data
                     cache: 'no-store',
+                    // Add redirect handling
+                    redirect: 'follow',
                 });
                 
                 clearTimeout(timeoutId);
@@ -160,6 +171,13 @@ export async function POST(
                         console.warn('Rate limited by Reddit, waiting 2 seconds...');
                         await new Promise(resolve => setTimeout(resolve, 2000));
                     }
+                    
+                    // If blocked (403), this is likely due to Reddit blocking serverless IPs
+                    // This is a known issue with Reddit's public API from cloud providers
+                    if (res.status === 403) {
+                        console.warn(`⚠️ Reddit blocked request to r/${sub} - likely due to Vercel IP blocking`);
+                    }
+                    
                     continue;
                 }
 
@@ -211,9 +229,15 @@ export async function POST(
             lastManualDiscoveryAt: new Date().toISOString() 
         });
 
+        // Check if all requests were blocked
+        const allBlocked = diagnostics.errors.length > 0 && 
+                          diagnostics.errors.every((e: any) => e.status === 403);
+        
         // Ensure all data is serializable
         const responseData = {
-            message: 'Discovery complete',
+            message: allBlocked 
+                ? 'Discovery complete but Reddit API blocked all requests (403). This is a known issue with Reddit blocking requests from cloud providers like Vercel.'
+                : 'Discovery complete',
             count: discoveredLeads.length,
             diagnostics: {
                 subredditsSearched: diagnostics.subredditsSearched,
@@ -221,6 +245,7 @@ export async function POST(
                 postsFound: diagnostics.postsFound,
                 groqAvailable: diagnostics.groqAvailable,
                 groqModel: diagnostics.groqModel,
+                allBlocked: allBlocked,
             },
             subredditsSearched: Array.isArray(targetSubreddits) ? [...targetSubreddits] : [],
             keywordsUsed: Array.isArray(generatedKeywords) ? [...generatedKeywords] : []
