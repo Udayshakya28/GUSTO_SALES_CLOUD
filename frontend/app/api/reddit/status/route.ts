@@ -3,6 +3,13 @@ import Snoowrap from 'snoowrap';
 
 export const runtime = 'nodejs';
 
+// Helper function to avoid TypeScript circular reference issue with Snoowrap
+async function getRedditUser(r: Snoowrap): Promise<any> {
+    // Cast to any to avoid circular type reference issue
+    const rAny = r as any;
+    return await rAny.getMe();
+}
+
 export async function GET() {
     try {
         // Check if DEVVIT_TOKEN is configured
@@ -59,9 +66,7 @@ export async function GET() {
 
             // Try to get user info to verify token is valid
             try {
-                // Use @ts-ignore to avoid TypeScript circular reference issue with Snoowrap types
-                // @ts-ignore - Snoowrap has circular type references in getMe() return type
-                const me = await r.getMe();
+                const me = await getRedditUser(r);
                 return NextResponse.json({
                     connected: true,
                     method: 'devvit',
