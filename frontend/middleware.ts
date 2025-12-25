@@ -14,6 +14,19 @@ const isPublicRoute = createRouteMatcher([
 
 // This is the main middleware function.
 export default clerkMiddleware(async (auth, req) => {
+  // Allow OPTIONS requests (CORS preflight) to pass through
+  if (req.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   // If the route is not public, it's protected.
   if (!isPublicRoute(req)) {
     const { isAuthenticated } = await auth();

@@ -9,13 +9,16 @@ export const maxDuration = 60; // 60 seconds max for discovery
 export const fetchCache = 'force-no-store';
 
 // Handle OPTIONS for CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
+    const origin = request.headers.get('origin');
     return new NextResponse(null, {
         status: 200,
         headers: {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': origin || '*',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '86400',
+            'Access-Control-Allow-Credentials': 'true',
         },
     });
 }
@@ -162,12 +165,20 @@ export async function POST(
         });
     } catch (error: any) {
         console.error('Discovery route error:', error);
+        const origin = request.headers.get('origin');
         return NextResponse.json(
             { 
                 message: 'Discovery failed', 
                 error: error.message || 'Unknown error occurred' 
             }, 
-            { status: 500 }
+            { 
+                status: 500,
+                headers: {
+                    'Access-Control-Allow-Origin': origin || '*',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                }
+            }
         );
     }
 }

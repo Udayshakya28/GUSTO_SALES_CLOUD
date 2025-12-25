@@ -5,14 +5,17 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const maxDuration = 30;
 
-// Handle OPTIONS for CORS
-export async function OPTIONS() {
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: Request) {
+    const origin = request.headers.get('origin');
     return new NextResponse(null, {
         status: 200,
         headers: {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': origin || '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '86400',
+            'Access-Control-Allow-Credentials': 'true',
         },
     });
 }
@@ -103,6 +106,7 @@ export async function POST(request: Request) {
         // Check 6: Response capability
         checks.canCreateResponse = true;
 
+        const origin = request.headers.get('origin');
         return NextResponse.json({ 
             success: true,
             message: 'POST works! All checks passed.',
@@ -113,6 +117,9 @@ export async function POST(request: Request) {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': origin || '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
                 'X-Test-Route': 'true',
                 'X-Checks-Passed': 'true'
             }
@@ -124,6 +131,7 @@ export async function POST(request: Request) {
             name: error.name
         };
         
+        const origin = request.headers.get('origin');
         return NextResponse.json({
             success: false,
             message: 'POST error occurred',
@@ -133,6 +141,9 @@ export async function POST(request: Request) {
             status: 500,
             headers: {
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': origin || '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
                 'X-Test-Route': 'true',
                 'X-Checks-Passed': 'false'
             }
