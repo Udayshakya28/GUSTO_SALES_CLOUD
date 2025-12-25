@@ -126,10 +126,53 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
       console.log('📤 Calling discovery API...');
       const result = await api.runManualDiscovery(campaignId, token) as ApiResponse;
       console.log('📥 Discovery result:', result);
-
+      
+      // Log diagnostic information if available
+      if (result?.diagnostics) {
+        console.log('🔍 Discovery Diagnostics:', {
+          subredditsSearched: result.diagnostics.subredditsSearched,
+          postsFound: result.diagnostics.postsFound,
+          errors: result.diagnostics.errors,
+          groqAvailable: result.diagnostics.groqAvailable,
+          groqModel: result.diagnostics.groqModel,
+        });
+      }
+      
+      if (result?.subredditsSearched) {
+        console.log('📋 Subreddits searched:', result.subredditsSearched);
+      }
+      
+      if (result?.keywordsUsed) {
+        console.log('🔑 Keywords used:', result.keywordsUsed);
+      }
+      
       const leadCount = result?.count || (Array.isArray(result) ? result.length : (result?.length || 0));
       
       console.log(`✅ Found ${leadCount} leads`);
+      
+      if (leadCount === 0) {
+        console.warn('⚠️ No leads found. Checking diagnostics...');
+        if (result?.diagnostics) {
+          console.log('🔍 Full diagnostics:', result.diagnostics);
+          if (result.diagnostics.errors && result.diagnostics.errors.length > 0) {
+            console.error('❌ Errors encountered:', result.diagnostics.errors);
+          }
+          if (result.diagnostics.postsFound === 0) {
+            console.warn('⚠️ No posts found from Reddit API. Check subreddits and keywords.');
+            console.warn('📋 Subreddits that were searched:', result.diagnostics.subredditsSearched);
+          }
+        }
+        if (result?.message) {
+          console.warn('📝 API message:', result.message);
+        }
+        // Check if campaign exists
+        if (result?.availableCampaigns) {
+          console.error('❌ Campaign not found! Available campaigns:', result.availableCampaigns);
+          toast.error('Campaign not found on server', {
+            description: 'The campaign may have been reset. Please recreate it on the deployed site.'
+          });
+        }
+      }
       
       toast.success(`Found ${leadCount} global leads!`, {
         description: 'Discovered leads from across Reddit using global search'

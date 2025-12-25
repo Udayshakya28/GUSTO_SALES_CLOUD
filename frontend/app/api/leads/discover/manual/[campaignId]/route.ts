@@ -59,20 +59,51 @@ export async function POST(
         const campaign = db.getCampaign(campaignId);
 
         if (!campaign) {
-            return NextResponse.json({ message: 'Campaign not found' }, { status: 404 });
+            console.error(`❌ Campaign not found: ${campaignId}`);
+            // Return detailed error for debugging
+            const allCampaigns = db.getCampaigns();
+            return NextResponse.json({ 
+                message: 'Campaign not found',
+                campaignId,
+                availableCampaigns: allCampaigns.map(c => ({ id: c.id, name: c.name })),
+                note: 'In-memory database resets on each deployment. Campaign may need to be recreated.'
+            }, { status: 404 });
         }
 
         const { targetSubreddits, generatedKeywords } = campaign;
         
+        console.log(`📋 Campaign config:`, {
+            campaignId,
+            targetSubreddits: targetSubreddits?.length || 0,
+            generatedKeywords: generatedKeywords?.length || 0,
+        });
+        
         if (!targetSubreddits || targetSubreddits.length === 0) {
-            return NextResponse.json({ message: 'No target subreddits configured' }, { status: 400 });
+            console.error(`❌ No target subreddits configured for campaign: ${campaignId}`);
+            return NextResponse.json({ 
+                message: 'No target subreddits configured',
+                campaignId,
+                campaign: { id: campaign.id, name: campaign.name }
+            }, { status: 400 });
         }
 
         if (!generatedKeywords || generatedKeywords.length === 0) {
-            return NextResponse.json({ message: 'No keywords configured' }, { status: 400 });
+            console.error(`❌ No keywords configured for campaign: ${campaignId}`);
+            return NextResponse.json({ 
+                message: 'No keywords configured',
+                campaignId,
+                campaign: { id: campaign.id, name: campaign.name }
+            }, { status: 400 });
         }
 
         const discoveredLeads: any[] = [];
+        const diagnostics: any = {
+            subredditsSearched: [],
+            errors: [],
+            postsFound: 0,
+            groqAvailable: !!getGroqClient(),
+            groqModel: process.env.GROQ_MODEL || "llama3-70b-8192",
+        };
 
         // Search via Reddit Public JSON API (no authentication required)
         // Reddit's public API allows reading posts without credentials
@@ -81,6 +112,8 @@ export async function POST(
                 const query = generatedKeywords[0];
                 // Reddit's public JSON API endpoint - accessible without authentication
                 const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&limit=5`;
+
+                diagnostics.subredditsSearched.push({ subreddit: sub, query, url });
 
                 // Create abort controller for timeout
                 const controller = new AbortController();
@@ -106,7 +139,9 @@ export async function POST(
                 
                 if (!res.ok) {
                     const errorText = await res.text().catch(() => 'Unknown error');
-                    console.error(`Reddit API error for r/${sub}: ${res.status} ${res.statusText}`, errorText);
+                    const errorMsg = `Reddit API error for r/${sub}: ${res.status} ${res.statusText}`;
+                    console.error(errorMsg, errorText);
+                    diagnostics.errors.push({ subreddit: sub, error: errorMsg, status: res.status });
                     
                     // If rate limited (429), wait a bit before continuing
                     if (res.status === 429) {
@@ -119,11 +154,14 @@ export async function POST(
                 const data = await res.json();
                 
                 if (!data || !data.data || !data.data.children) {
-                    console.warn(`Invalid response format for r/${sub}`);
+                    const warnMsg = `Invalid response format for r/${sub}`;
+                    console.warn(warnMsg);
+                    diagnostics.errors.push({ subreddit: sub, error: warnMsg, response: data });
                     continue;
                 }
 
                 const posts = data.data.children;
+                diagnostics.postsFound += posts.length;
 
                 for (const child of posts) {
                     if (!child || !child.data) continue;
@@ -147,7 +185,9 @@ export async function POST(
                     });
                 }
             } catch (e: any) {
-                console.error(`Search failed for r/${sub}:`, e.message || e);
+                const errorMsg = `Search failed for r/${sub}: ${e.message || e}`;
+                console.error(errorMsg);
+                diagnostics.errors.push({ subreddit: sub, error: errorMsg });
                 // Continue with other subreddits even if one fails
             }
         }
@@ -159,10 +199,22 @@ export async function POST(
             lastManualDiscoveryAt: new Date().toISOString() 
         });
 
-        return NextResponse.json({
+        // Ensure all data is serializable
+        const responseData = {
             message: 'Discovery complete',
-            count: discoveredLeads.length
-        });
+            count: discoveredLeads.length,
+            diagnostics: {
+                subredditsSearched: diagnostics.subredditsSearched,
+                errors: diagnostics.errors,
+                postsFound: diagnostics.postsFound,
+                groqAvailable: diagnostics.groqAvailable,
+                groqModel: diagnostics.groqModel,
+            },
+            subredditsSearched: Array.isArray(targetSubreddits) ? [...targetSubreddits] : [],
+            keywordsUsed: Array.isArray(generatedKeywords) ? [...generatedKeywords] : []
+        };
+
+        return NextResponse.json(responseData);
     } catch (error: any) {
         console.error('Discovery route error:', error);
         const origin = request.headers.get('origin');
