@@ -5,6 +5,20 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: Request) {
+    const origin = request.headers.get('origin');
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': origin || '*',
+            'Access-Control-Allow-Methods': 'GET, PATCH, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '86400',
+        },
+    });
+}
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ campaignId: string }> }
