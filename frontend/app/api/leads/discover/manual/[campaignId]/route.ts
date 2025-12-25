@@ -93,28 +93,60 @@ export async function POST(
             });
         }
 
+        // If campaign still doesn't exist, try to create it from in-memory or return error
         if (!campaign) {
-            console.error(`❌ Campaign not found: ${campaignId}`);
-            // Return detailed error for debugging
-            const allCampaigns = db.getCampaigns();
-            return NextResponse.json({ 
-                message: 'Campaign not found',
-                campaignId,
-                availableCampaigns: allCampaigns.map(c => ({ id: c.id, name: c.name })),
-                note: 'Campaign may need to be created in the database first.'
-            }, { status: 404 });
+            const inMemoryCampaign = db.getCampaign(campaignId);
+            if (inMemoryCampaign && isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                // Try to create in Prisma
+                try {
+                    console.log(`📝 Campaign not found in Prisma, creating from in-memory...`);
+                    campaign = await prisma.campaign.create({
+                        data: {
+                            id: campaignId,
+                            userId: userId,
+                            name: inMemoryCampaign.name || 'Untitled Campaign',
+                            analyzedUrl: inMemoryCampaign.analyzedUrl || '',
+                            generatedKeywords: inMemoryCampaign.generatedKeywords || [],
+                            generatedDescription: inMemoryCampaign.generatedDescription || '',
+                            targetSubreddits: inMemoryCampaign.targetSubreddits || [],
+                            competitors: inMemoryCampaign.competitors || [],
+                            isActive: true,
+                        }
+                    });
+                    console.log(`✅ Created campaign ${campaignId} in Prisma`);
+                } catch (createError: any) {
+                    console.warn(`⚠️ Could not create in Prisma, using in-memory campaign:`, createError.message);
+                    campaign = inMemoryCampaign;
+                    campaign.userId = userId; // Set correct userId
+                }
+            } else if (inMemoryCampaign) {
+                // Use in-memory campaign
+                campaign = inMemoryCampaign;
+                campaign.userId = userId; // Set correct userId
+                console.log(`📝 Using in-memory campaign with userId ${userId}`);
+            } else {
+                console.error(`❌ Campaign not found: ${campaignId}`);
+                // Return detailed error for debugging
+                const allCampaigns = db.getCampaigns();
+                return NextResponse.json({ 
+                    message: 'Campaign not found',
+                    campaignId,
+                    availableCampaigns: allCampaigns.map(c => ({ id: c.id, name: c.name })),
+                    note: 'Campaign may need to be created in the database first.'
+                }, { status: 404 });
+            }
         }
         
-        // If campaign exists in Prisma but userId doesn't match, update it to current user
-        // This handles the case where campaign was created in-memory with different userId
-        if (campaign.userId && campaign.userId !== userId) {
-            console.warn(`⚠️ Campaign userId mismatch, updating to current user:`, {
+        // Handle userId mismatch - update campaign or use in-memory version
+        if (campaign && campaign.userId && campaign.userId !== userId) {
+            console.warn(`⚠️ Campaign userId mismatch:`, {
                 campaignUserId: campaign.userId,
-                currentUserId: userId
+                currentUserId: userId,
+                campaignSource: campaign.id ? 'prisma' : 'in-memory'
             });
             
-            // Update campaign to belong to current user
-            if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+            // Try to update campaign in Prisma if it exists there
+            if (isPrismaAvailable() && prisma && process.env.DATABASE_URL && campaign.id) {
                 try {
                     await prisma.campaign.update({
                         where: { id: campaignId },
@@ -127,8 +159,43 @@ export async function POST(
                     });
                 } catch (updateError: any) {
                     console.error(`❌ Failed to update campaign userId:`, updateError);
-                    // Continue anyway - might be a permission issue
+                    // If update fails, check if in-memory campaign exists and use that
+                    const inMemoryCampaign = db.getCampaign(campaignId);
+                    if (inMemoryCampaign) {
+                        console.log(`🔄 Using in-memory campaign instead`);
+                        campaign = inMemoryCampaign;
+                        // Try to create it in Prisma with correct userId
+                        try {
+                            await prisma.campaign.upsert({
+                                where: { id: campaignId },
+                                update: { userId: userId },
+                                create: {
+                                    id: campaignId,
+                                    userId: userId,
+                                    name: inMemoryCampaign.name || 'Untitled Campaign',
+                                    analyzedUrl: inMemoryCampaign.analyzedUrl || '',
+                                    generatedKeywords: inMemoryCampaign.generatedKeywords || [],
+                                    generatedDescription: inMemoryCampaign.generatedDescription || '',
+                                    targetSubreddits: inMemoryCampaign.targetSubreddits || [],
+                                    competitors: inMemoryCampaign.competitors || [],
+                                    isActive: true,
+                                }
+                            });
+                            console.log(`✅ Created/updated campaign ${campaignId} in Prisma`);
+                        } catch (upsertError: any) {
+                            console.warn(`⚠️ Could not sync campaign to Prisma, using in-memory:`, upsertError.message);
+                        }
+                    } else {
+                        // No in-memory campaign, but we'll continue with Prisma campaign anyway
+                        // Update the userId in memory so the rest of the code works
+                        campaign.userId = userId;
+                        console.log(`⚠️ Updated campaign userId in memory, but Prisma update failed`);
+                    }
                 }
+            } else {
+                // Campaign is from in-memory db, update userId
+                campaign.userId = userId;
+                console.log(`✅ Updated in-memory campaign userId to ${userId}`);
             }
         }
         
@@ -156,9 +223,31 @@ export async function POST(
                     console.error(`❌ Failed to create campaign in Prisma:`, createError);
                     // Fall back to in-memory campaign
                     campaign = inMemoryCampaign;
+                    campaign.userId = userId; // Ensure userId is set
                 }
             }
         }
+        
+        // Final check - ensure campaign has correct userId (safety net)
+        if (!campaign) {
+            return NextResponse.json({ 
+                message: 'Campaign not found after all checks',
+                campaignId
+            }, { status: 404 });
+        }
+        
+        // Force userId to match current user (final safety check)
+        if (campaign.userId !== userId) {
+            console.warn(`⚠️ Final safety check: Forcing userId from ${campaign.userId} to ${userId}`);
+            campaign.userId = userId;
+        }
+        
+        console.log(`✅ Campaign validated:`, {
+            campaignId,
+            userId: campaign.userId,
+            name: campaign.name,
+            targetSubreddits: campaign.targetSubreddits?.length || 0
+        });
 
         const { targetSubreddits, generatedKeywords } = campaign;
         
