@@ -50,11 +50,18 @@ export type Webhook = {
     rateLimitMinutes?: number;
 };
 
+export type EmailSettings = {
+    userId: string;
+    email: string;
+    enabled: boolean;
+};
+
 // Global storage to persist across hot reloads in dev
 declare global {
     var rl_campaigns: Campaign[];
     var rl_leads: Record<string, Lead[]>;
     var rl_webhooks: Webhook[];
+    var rl_email_settings: Record<string, EmailSettings>;
 }
 
 if (!global.rl_campaigns) {
@@ -79,6 +86,10 @@ if (!global.rl_leads) {
 
 if (!global.rl_webhooks) {
     global.rl_webhooks = [];
+}
+
+if (!global.rl_email_settings) {
+    global.rl_email_settings = {};
 }
 
 export const db = {
@@ -145,5 +156,18 @@ export const db = {
             return true;
         }
         return false;
+    },
+
+    // Email Settings
+    getEmailSettings: (userId: string): EmailSettings | null => {
+        return global.rl_email_settings[userId] || null;
+    },
+    updateEmailSettings: (userId: string, settings: { email: string; enabled: boolean }) => {
+        global.rl_email_settings[userId] = {
+            userId,
+            email: settings.email,
+            enabled: settings.enabled
+        };
+        return global.rl_email_settings[userId];
     }
 };
