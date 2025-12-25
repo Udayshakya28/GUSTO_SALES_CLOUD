@@ -40,7 +40,7 @@ export async function GET(
                 });
                 
                 // Convert Prisma leads to API format
-                leads = prismaLeads.map(lead => ({
+                leads = prismaLeads.map((lead: any) => ({
                     id: lead.id,
                     redditId: lead.redditId,
                     title: lead.title,

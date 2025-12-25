@@ -4,8 +4,6 @@ import { getGroqClient, handleGroqError } from '@/lib/groq';
 import { fetchWithProxy, isProxyEnabled, getProxyStatus } from '@/lib/proxy';
 import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
 
 // Route segment config for Vercel
 export const runtime = 'nodejs';
@@ -59,6 +57,12 @@ export async function POST(
         
         if (!campaignId) {
             return NextResponse.json({ message: 'Campaign ID is required' }, { status: 400 });
+        }
+
+        // Get user ID from Clerk
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
         const campaign = db.getCampaign(campaignId);
