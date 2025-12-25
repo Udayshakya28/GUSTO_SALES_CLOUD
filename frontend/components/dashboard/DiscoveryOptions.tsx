@@ -28,7 +28,18 @@ interface ApiResponse {
   count?: number;
   leads?: unknown[];
   subredditsSearched?: string[];
+  keywordsUsed?: string[];
   message?: string;
+  diagnostics?: {
+    subredditsSearched?: Array<{ subreddit: string; query: string; url: string }>;
+    errors?: Array<{ subreddit?: string; error: string; status?: number }>;
+    postsFound?: number;
+    groqAvailable?: boolean;
+    groqModel?: string;
+  };
+  availableCampaigns?: Array<{ id: string; name: string }>;
+  campaignId?: string;
+  note?: string;
 }
 
 export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
