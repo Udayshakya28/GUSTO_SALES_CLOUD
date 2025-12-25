@@ -24,6 +24,14 @@ export async function GET(
         
         console.log(`📥 Fetching leads for campaign: ${campaignId}, user: ${userId}`);
         
+        // Debug: Log Prisma availability
+        console.log('🔍 Prisma Fetch Diagnostics:', {
+            isPrismaAvailable: isPrismaAvailable(),
+            prismaExists: !!prisma,
+            databaseUrlSet: !!process.env.DATABASE_URL,
+            databaseUrlPreview: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET'
+        });
+        
         let leads = [];
         let source = 'in-memory';
         
@@ -31,6 +39,16 @@ export async function GET(
         if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             try {
                 console.log('🔍 Attempting to fetch leads from Prisma database...');
+                
+                // Test connection first
+                try {
+                    await prisma.$connect();
+                    console.log('✅ Prisma connection successful for fetch');
+                } catch (connError: any) {
+                    console.error('❌ Prisma connection failed:', connError.message);
+                    throw connError;
+                }
+                
                 const prismaLeads = await prisma.lead.findMany({
                     where: { 
                         campaignId: campaignId,
@@ -62,9 +80,19 @@ export async function GET(
                 source = 'prisma';
                 console.log(`📊 Found ${leads.length} leads in Prisma database for campaign ${campaignId}`);
             } catch (prismaError: any) {
-                console.warn('⚠️ Prisma error, falling back to in-memory db:', prismaError);
+                console.warn('⚠️ Prisma error, falling back to in-memory db:', {
+                    message: prismaError.message,
+                    code: prismaError.code,
+                    meta: prismaError.meta
+                });
                 // Fall through to in-memory database
             }
+        } else {
+            console.log('⚠️ Prisma not used for fetch. Reasons:', {
+                isPrismaAvailable: isPrismaAvailable(),
+                prismaExists: !!prisma,
+                databaseUrlSet: !!process.env.DATABASE_URL
+            });
         }
         
         // Fallback to in-memory database if Prisma failed or not available

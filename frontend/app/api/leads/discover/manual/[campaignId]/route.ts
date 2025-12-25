@@ -310,11 +310,29 @@ export async function POST(
         let skippedCount = 0;
         let usedPrisma = false;
         
+        // Debug: Log Prisma availability
+        console.log('🔍 Prisma Diagnostics:', {
+            isPrismaAvailable: isPrismaAvailable(),
+            prismaExists: !!prisma,
+            databaseUrlSet: !!process.env.DATABASE_URL,
+            databaseUrlPreview: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
+            discoveredLeadsCount: discoveredLeads.length
+        });
+        
         // Try Prisma first if available and DATABASE_URL is set
         if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             try {
                 usedPrisma = true;
                 console.log('💾 Attempting to save leads to Prisma database...');
+                
+                // Test connection first
+                try {
+                    await prisma.$connect();
+                    console.log('✅ Prisma connection successful');
+                } catch (connError: any) {
+                    console.error('❌ Prisma connection failed:', connError.message);
+                    throw connError;
+                }
                 
                 // Use Prisma to save leads (upsert to avoid duplicates)
                 for (const lead of discoveredLeads) {
