@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getGroqClient, handleGroqError } from '@/lib/groq';
 import { fetchWithProxy, isProxyEnabled, getProxyStatus } from '@/lib/proxy';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
 // Route segment config for Vercel
 export const runtime = 'nodejs';
@@ -97,7 +101,23 @@ export async function POST(
             }, { status: 400 });
         }
 
-        const discoveredLeads: any[] = [];
+        interface DiscoveredLead {
+            redditId: string;
+            title: string;
+            author: string;
+            subreddit: string;
+            url: string;
+            body: string;
+            status: 'new';
+            intent: string;
+            opportunityScore: number;
+            postedAt: Date;
+            type: 'DIRECT_LEAD';
+            numComments: number;
+            upvoteRatio: number;
+        }
+        
+        const discoveredLeads: DiscoveredLead[] = [];
         const proxyStatus = getProxyStatus();
         const diagnostics: any = {
             subredditsSearched: [],
@@ -258,16 +278,17 @@ export async function POST(
                     const score = await calculateOpportunityScore(post.title, post.selftext || '', generatedKeywords);
 
                     discoveredLeads.push({
-                        id: post.id,
+                        redditId: post.id,
                         title: post.title,
                         author: post.author,
                         subreddit: post.subreddit,
                         url: `https://reddit.com${post.permalink}`,
                         body: post.selftext || '',
-                        status: 'new',
+                        status: 'new' as const,
                         intent: 'unclassified',
                         opportunityScore: score,
-                        createdAt: post.created_utc,
+                        postedAt: new Date(post.created_utc * 1000), // Convert Unix timestamp to Date
+                        type: 'DIRECT_LEAD' as const,
                         numComments: post.num_comments,
                         upvoteRatio: post.upvote_ratio
                     });
@@ -280,19 +301,104 @@ export async function POST(
             }
         }
 
-        // Save leads to database
-        const savedLeads = db.addLeads(campaignId, discoveredLeads);
-        console.log(`💾 Saved ${discoveredLeads.length} leads to database for campaign ${campaignId}`);
-        console.log(`📊 Total leads in database for ${campaignId}: ${savedLeads.length}`);
+        // Save leads to Prisma database (with fallback to in-memory)
+        let savedCount = 0;
+        let skippedCount = 0;
+        let usedPrisma = false;
         
-        // Verify leads were saved
-        const verifyLeads = db.getLeads(campaignId);
-        console.log(`✅ Verification: ${verifyLeads.length} leads found in database for ${campaignId}`);
-
-        // Update last discovery timestamp
-        db.updateCampaign(campaignId, { 
-            lastManualDiscoveryAt: new Date().toISOString() 
-        });
+        // Try Prisma first if available and DATABASE_URL is set
+        if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+            try {
+                usedPrisma = true;
+                console.log('💾 Attempting to save leads to Prisma database...');
+                
+                // Use Prisma to save leads (upsert to avoid duplicates)
+                for (const lead of discoveredLeads) {
+                    try {
+                        await prisma.lead.upsert({
+                            where: {
+                                redditId_campaignId: {
+                                    redditId: lead.redditId,
+                                    campaignId: campaignId
+                                }
+                            },
+                            update: {
+                                // Update existing lead
+                                opportunityScore: lead.opportunityScore,
+                                status: lead.status,
+                                intent: lead.intent,
+                            },
+                            create: {
+                                redditId: lead.redditId,
+                                title: lead.title,
+                                author: lead.author,
+                                subreddit: lead.subreddit,
+                                url: lead.url,
+                                body: lead.body || null,
+                                postedAt: lead.postedAt,
+                                opportunityScore: lead.opportunityScore,
+                                status: lead.status,
+                                intent: lead.intent || null,
+                                campaignId: campaignId,
+                                userId: userId,
+                                type: lead.type,
+                            }
+                        });
+                        savedCount++;
+                    } catch (error: any) {
+                        // Skip duplicates or other errors
+                        if (error.code === 'P2002') {
+                            skippedCount++; // Duplicate
+                        } else {
+                            console.error(`Error saving lead ${lead.redditId}:`, error);
+                        }
+                    }
+                }
+                
+                console.log(`💾 Saved ${savedCount} leads to Prisma database (${skippedCount} duplicates skipped)`);
+                
+                // Update campaign timestamp
+                await prisma.campaign.update({
+                    where: { id: campaignId },
+                    data: { lastManualDiscoveryAt: new Date() }
+                });
+                
+                // Verify leads were saved
+                const verifyLeads = await prisma.lead.count({
+                    where: { campaignId: campaignId }
+                });
+                console.log(`✅ Verification: ${verifyLeads} total leads in Prisma database for ${campaignId}`);
+                
+            } catch (prismaError: any) {
+                console.error('❌ Prisma error saving leads:', prismaError);
+                usedPrisma = false;
+                // Fall through to in-memory fallback
+            }
+        }
+        
+        // Fallback to in-memory database if Prisma failed or not available
+        if (!usedPrisma) {
+            console.log('⚠️ Using in-memory database (Prisma not available or failed)');
+            const savedLeads = db.addLeads(campaignId, discoveredLeads.map(l => ({
+                id: l.redditId,
+                title: l.title,
+                author: l.author,
+                subreddit: l.subreddit,
+                url: l.url,
+                body: l.body || '',
+                status: l.status,
+                intent: l.intent || 'unclassified',
+                opportunityScore: l.opportunityScore,
+                createdAt: l.postedAt.getTime() / 1000,
+                numComments: l.numComments || 0,
+                upvoteRatio: l.upvoteRatio || 0
+            })));
+            db.updateCampaign(campaignId, { 
+                lastManualDiscoveryAt: new Date().toISOString() 
+            });
+            savedCount = savedLeads.length;
+            console.log(`💾 Saved ${savedCount} leads to in-memory database`);
+        }
 
         // Check if all requests were blocked
         const allBlocked = diagnostics.errors.length > 0 && 
