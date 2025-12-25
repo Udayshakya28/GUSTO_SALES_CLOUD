@@ -23,7 +23,7 @@ export async function GET() {
                 });
                 
                 // Convert Prisma campaigns to API format
-                const formattedCampaigns = campaigns.map(campaign => ({
+                const formattedCampaigns = campaigns.map((campaign: any) => ({
                     id: campaign.id,
                     userId: campaign.userId,
                     name: campaign.name,

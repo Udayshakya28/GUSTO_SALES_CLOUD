@@ -188,30 +188,27 @@ export const DashboardLayout = () => {
         console.error('Full response:', JSON.stringify(response, null, 2));
       }
       
-      const leadsData: Lead[] = rawLeads.map((lead: any) => {
-        if (!lead) {
-          console.warn('⚠️ Null lead found in array');
-          return null;
-        }
-        
-        return {
-          id: lead.id,
-          redditId: lead.redditId, // Include redditId for reply functionality
-          title: lead.title || '',
-          author: lead.author || '',
-          subreddit: lead.subreddit || '',
-          url: lead.url || '',
-          body: lead.body || '',
-          createdAt: lead.createdAt || lead.discoveredAt || Math.floor(Date.now() / 1000),
-          intent: lead.intent || 'unclassified',
-          summary: lead.summary || null,
-          opportunityScore: lead.opportunityScore || 0,
-          status: lead.status || 'new',
-          numComments: lead.numComments || 0,
-          upvoteRatio: lead.upvoteRatio || 0,
-          isGoogleRanked: lead.isGoogleRanked ?? false,
-        };
-      }).filter((lead): lead is Lead => lead !== null);
+      const leadsData: Lead[] = rawLeads
+        .filter((lead: any) => lead !== null && lead !== undefined)
+        .map((lead: any) => {
+          return {
+            id: lead.id,
+            redditId: lead.redditId, // Include redditId for reply functionality
+            title: lead.title || '',
+            author: lead.author || '',
+            subreddit: lead.subreddit || '',
+            url: lead.url || '',
+            body: lead.body || '',
+            createdAt: lead.createdAt || lead.discoveredAt || Math.floor(Date.now() / 1000),
+            intent: lead.intent || 'unclassified',
+            summary: lead.summary || null,
+            opportunityScore: lead.opportunityScore || 0,
+            status: lead.status || 'new',
+            numComments: lead.numComments || 0,
+            upvoteRatio: lead.upvoteRatio || 0,
+            isGoogleRanked: lead.isGoogleRanked ?? false,
+          };
+        });
       
       console.log('✅ Leads mapped:', {
         total: leadsData.length,

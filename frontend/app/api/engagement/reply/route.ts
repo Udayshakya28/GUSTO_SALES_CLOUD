@@ -44,9 +44,11 @@ export async function POST(request: Request) {
             
             // Fallback to in-memory database
             if (!postId) {
-                const lead = db.getLead(leadId);
-                if (lead && lead.redditId) {
-                    postId = lead.redditId;
+                // Search through all campaigns' leads to find the lead
+                const allLeads = db.getCampaigns().flatMap(campaign => db.getLeads(campaign.id));
+                const lead = allLeads.find(l => l.id === leadId);
+                if (lead && (lead as any).redditId) {
+                    postId = (lead as any).redditId;
                     console.log(`✅ Found redditId in in-memory DB: ${postId}`);
                 }
             }
@@ -102,7 +104,9 @@ export async function POST(request: Request) {
                 try {
                     // Verify token is valid by getting user info first
                     try {
-                        const me = await r.getMe();
+                        // Break circular reference by casting to any (same pattern as reddit/status route)
+                        const rAny = r as any;
+                        const me = await rAny.getMe();
                         console.log(`✅ Authenticated as Reddit user: ${me.name}`);
                     } catch (authError: any) {
                         console.error("❌ Token validation failed:", authError.message);
@@ -234,7 +238,6 @@ export async function POST(request: Request) {
                                     accessToken: innerToken.accessToken
                                 });
 
-                                const cleanPostId = postId.replace(/^t3_/, '');
                                 const cleanPostId = postId.replace(/^t3_/, '');
                                 const submission = r.getSubmission(cleanPostId);
                                 // @ts-ignore - TypeScript circular reference issue with snoowrap types

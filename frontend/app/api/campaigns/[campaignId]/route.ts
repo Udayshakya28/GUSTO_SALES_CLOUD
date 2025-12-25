@@ -119,9 +119,9 @@ export async function PATCH(
                             generatedDescription: body.generatedDescription || inMemoryCampaign?.generatedDescription || '',
                             targetSubreddits: body.targetSubreddits || inMemoryCampaign?.targetSubreddits || [],
                             competitors: body.competitors || inMemoryCampaign?.competitors || [],
-                            isActive: body.isActive !== undefined ? body.isActive : (inMemoryCampaign?.isActive ?? true),
-                            negativeKeywords: body.negativeKeywords || inMemoryCampaign?.negativeKeywords || [],
-                            subredditBlacklist: body.subredditBlacklist || inMemoryCampaign?.subredditBlacklist || []
+                            isActive: body.isActive !== undefined ? body.isActive : ((inMemoryCampaign as any)?.isActive ?? true),
+                            negativeKeywords: body.negativeKeywords || (inMemoryCampaign as any)?.negativeKeywords || [],
+                            subredditBlacklist: body.subredditBlacklist || (inMemoryCampaign as any)?.subredditBlacklist || []
                         }
                     });
                     
