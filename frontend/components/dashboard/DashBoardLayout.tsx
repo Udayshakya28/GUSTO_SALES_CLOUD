@@ -92,9 +92,12 @@ export const DashboardLayout = () => {
   }, [getToken, activeCampaign]);
 
   const fetchLeads = useCallback(async (campaignId: string) => {
+    console.log('🔄 Fetching leads for campaign:', campaignId);
     setIsLoading(true);
     try {
       const token = await getToken();
+      console.log('🔑 Token obtained:', token ? 'Yes' : 'No');
+      
       const allLeadsResponse = await api.getLeads(campaignId, {
         intent: intentFilter,
         sortBy,
@@ -102,28 +105,52 @@ export const DashboardLayout = () => {
         page: 1,
         limit: 1000,
       }, token);
-      const leadsData: Lead[] = (allLeadsResponse.data || []).map((lead: any) => ({
-        id: lead.id,
-        title: lead.title,
-        author: lead.author,
-        subreddit: lead.subreddit,
-        url: lead.url,
-        body: lead.body,
-        createdAt: lead.createdAt,
-        intent: lead.intent,
-        summary: lead.summary,
-        opportunityScore: lead.opportunityScore,
-        status: lead.status || 'new',
-        numComments: lead.numComments,
-        upvoteRatio: lead.upvoteRatio,
-        isGoogleRanked: lead.isGoogleRanked ?? false,
-      }));
-      setAllLeads(leadsData);
-      console.log('✅ Leads loaded:', {
+      
+      console.log('📥 Raw API response:', {
+        responseType: typeof allLeadsResponse,
+        hasData: !!allLeadsResponse.data,
+        dataType: Array.isArray(allLeadsResponse.data) ? 'array' : typeof allLeadsResponse.data,
+        dataLength: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.length : 'N/A',
+        responseKeys: Object.keys(allLeadsResponse),
+        sampleData: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.slice(0, 2) : allLeadsResponse.data
+      });
+      
+      // Handle both array and object responses
+      const rawLeads = allLeadsResponse.data || allLeadsResponse || [];
+      console.log('📋 Raw leads:', {
+        isArray: Array.isArray(rawLeads),
+        length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',
+        sample: Array.isArray(rawLeads) ? rawLeads.slice(0, 2) : rawLeads
+      });
+      
+      const leadsData: Lead[] = (Array.isArray(rawLeads) ? rawLeads : []).map((lead: any) => {
+        console.log('🔄 Mapping lead:', { id: lead.id, title: lead.title?.substring(0, 30) });
+        return {
+          id: lead.id,
+          title: lead.title,
+          author: lead.author,
+          subreddit: lead.subreddit,
+          url: lead.url,
+          body: lead.body,
+          createdAt: lead.createdAt,
+          intent: lead.intent,
+          summary: lead.summary,
+          opportunityScore: lead.opportunityScore,
+          status: lead.status || 'new',
+          numComments: lead.numComments,
+          upvoteRatio: lead.upvoteRatio,
+          isGoogleRanked: lead.isGoogleRanked ?? false,
+        };
+      });
+      
+      console.log('✅ Leads mapped:', {
         total: leadsData.length,
         filtered: activeFilter !== "all" ? leadsData.filter((lead) => lead.status === activeFilter).length : leadsData.length,
-        filter: activeFilter
+        filter: activeFilter,
+        sampleIds: leadsData.slice(0, 3).map(l => l.id)
       });
+      
+      setAllLeads(leadsData);
 
       if (activeFilter !== "all") {
         const filtered = leadsData.filter((lead) => lead.status === activeFilter);
@@ -134,6 +161,7 @@ export const DashboardLayout = () => {
         console.log('📊 Showing all leads:', leadsData.length);
       }
     } catch (err: any) {
+      console.error('❌ Error fetching leads:', err);
       setError(`Failed to load leads: ${err.message}`);
       setLeads([]);
       setAllLeads([]);

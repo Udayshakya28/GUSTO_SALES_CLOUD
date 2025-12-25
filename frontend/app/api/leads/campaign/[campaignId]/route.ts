@@ -60,7 +60,33 @@ export async function GET(
                     campaignUserId: campaign?.userId,
                     currentUserId: userId,
                     userIdMatch: campaign?.userId === userId,
-                    totalLeadsInCampaign: campaign?.leads.length || 0
+                    totalLeadsInCampaign: campaign?.leads.length || 0,
+                    campaignName: campaign?.name
+                });
+                
+                // Get total counts for debugging
+                const totalLeadsInCampaign = await prisma.lead.count({
+                    where: { campaignId: campaignId }
+                });
+                const leadsWithUserId = await prisma.lead.count({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: userId
+                    }
+                });
+                const leadsWithOtherUserId = await prisma.lead.count({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: { not: userId }
+                    }
+                });
+                
+                console.log(`📊 Lead counts breakdown:`, {
+                    totalInCampaign: totalLeadsInCampaign,
+                    withCurrentUserId: leadsWithUserId,
+                    withOtherUserId: leadsWithOtherUserId,
+                    campaignId,
+                    currentUserId: userId
                 });
                 
                 // Try fetching with userId first, then without if no results
@@ -72,7 +98,7 @@ export async function GET(
                     orderBy: { discoveredAt: 'desc' }
                 });
                 
-                console.log(`📊 Leads found with userId filter: ${prismaLeads.length}`);
+                console.log(`📊 Leads found with userId filter (${userId}): ${prismaLeads.length}`);
                 
                 // If no leads found with userId, try without userId filter (for debugging)
                 if (prismaLeads.length === 0) {
@@ -80,15 +106,26 @@ export async function GET(
                         where: { 
                             campaignId: campaignId
                         },
-                        orderBy: { discoveredAt: 'desc' }
+                        orderBy: { discoveredAt: 'desc' },
+                        take: 10 // Limit for debugging
                     });
                     console.log(`📊 Leads found without userId filter: ${allCampaignLeads.length}`);
-                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 3).map((l: any) => ({ id: l.id, userId: l.userId })));
+                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 5).map((l: any) => ({ 
+                        id: l.id, 
+                        redditId: l.redditId,
+                        userId: l.userId,
+                        title: l.title?.substring(0, 30)
+                    })));
                     
                     // Use all leads if campaign exists and belongs to user
                     if (campaign && campaign.userId === userId) {
+                        console.log(`✅ Campaign belongs to user, using all ${allCampaignLeads.length} leads`);
                         prismaLeads = allCampaignLeads;
-                        console.log(`✅ Using all campaign leads (campaign belongs to user)`);
+                    } else if (campaign && campaign.userId !== userId) {
+                        console.warn(`⚠️ Campaign belongs to different user (${campaign.userId}), but using all leads anyway for debugging`);
+                        prismaLeads = allCampaignLeads;
+                    } else {
+                        console.warn(`⚠️ Campaign not found or userId mismatch, but no leads found with userId filter`);
                     }
                 }
                 
@@ -114,6 +151,14 @@ export async function GET(
                 
                 source = 'prisma';
                 console.log(`📊 Found ${leads.length} leads in Prisma database for campaign ${campaignId}`);
+                console.log(`📋 Sample converted leads:`, leads.slice(0, 3).map((l: any) => ({
+                    id: l.id,
+                    redditId: l.redditId,
+                    title: l.title?.substring(0, 30),
+                    userId: 'N/A (converted)',
+                    status: l.status,
+                    campaignId: campaignId
+                })));
             } catch (prismaError: any) {
                 console.warn('⚠️ Prisma error, falling back to in-memory db:', {
                     message: prismaError.message,

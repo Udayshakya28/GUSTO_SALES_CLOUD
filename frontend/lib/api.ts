@@ -55,12 +55,31 @@ export const api = {
 
   // Lead endpoints
   getLeads: async (campaignId: string, params: Record<string, any>, token: string | null) => {
+    console.log('🔍 getLeads called:', { campaignId, params });
     const query = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE_URL}/api/leads/campaign/${campaignId}?${query}`, {
+    const url = `${API_BASE_URL}/api/leads/campaign/${campaignId}?${query}`;
+    console.log('📡 Fetching leads from:', url);
+    
+    const response = await fetch(url, {
       headers: getAuthHeaders(token)
     });
-    if (!response.ok) throw new Error('Failed to fetch leads');
-    return response.json();
+    
+    console.log('📡 Leads response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('❌ Failed to fetch leads:', response.status, errorText);
+      throw new Error(`Failed to fetch leads: ${response.status} ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Leads response data:', {
+      dataType: Array.isArray(data) ? 'array' : typeof data,
+      dataLength: Array.isArray(data) ? data.length : 'N/A',
+      dataKeys: Array.isArray(data) ? 'N/A' : Object.keys(data),
+      sample: Array.isArray(data) ? data.slice(0, 2) : data
+    });
+    return { data };
   },
 
   // Manual discovery

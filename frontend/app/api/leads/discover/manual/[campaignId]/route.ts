@@ -565,11 +565,55 @@ export async function POST(
                     data: { lastManualDiscoveryAt: new Date() }
                 });
                 
-                // Verify leads were saved
-                const verifyLeads = await prisma.lead.count({
+                // Verify leads were saved - check multiple ways
+                const verifyLeadsAll = await prisma.lead.count({
                     where: { campaignId: campaignId }
                 });
-                console.log(`✅ Verification: ${verifyLeads} total leads in Prisma database for ${campaignId}`);
+                const verifyLeadsWithUserId = await prisma.lead.count({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: userId
+                    }
+                });
+                const verifyLeadsWithoutUserId = await prisma.lead.count({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: { not: userId }
+                    }
+                });
+                
+                console.log(`✅ Verification counts:`, {
+                    totalInCampaign: verifyLeadsAll,
+                    withCurrentUserId: verifyLeadsWithUserId,
+                    withOtherUserId: verifyLeadsWithoutUserId,
+                    campaignId,
+                    currentUserId: userId
+                });
+                
+                // Log sample of saved leads - check both with and without userId filter
+                const sampleLeadsAll = await prisma.lead.findMany({
+                    where: { campaignId: campaignId },
+                    take: 5,
+                    select: { id: true, redditId: true, userId: true, title: true, campaignId: true }
+                });
+                const sampleLeadsWithUserId = await prisma.lead.findMany({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: userId
+                    },
+                    take: 5,
+                    select: { id: true, redditId: true, userId: true, title: true, campaignId: true }
+                });
+                
+                console.log(`📋 Sample leads (all in campaign):`, sampleLeadsAll);
+                console.log(`📋 Sample leads (with userId ${userId}):`, sampleLeadsWithUserId);
+                
+                // Check campaign details
+                const campaignCheck = await prisma.campaign.findUnique({
+                    where: { id: campaignId },
+                    select: { id: true, userId: true, name: true }
+                });
+                console.log(`📋 Campaign details:`, campaignCheck);
                 
             } catch (prismaError: any) {
                 console.error('❌ Prisma error saving leads:', prismaError);
