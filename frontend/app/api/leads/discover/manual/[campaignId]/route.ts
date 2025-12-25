@@ -6,6 +6,7 @@ import { getGroqClient, handleGroqError } from '@/lib/groq';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds max for discovery
+export const fetchCache = 'force-no-store';
 
 // Handle OPTIONS for CORS preflight
 export async function OPTIONS() {
