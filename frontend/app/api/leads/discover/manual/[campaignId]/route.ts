@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getGroqClient, handleGroqError } from '@/lib/groq';
 import { fetchWithProxy, isProxyEnabled, getProxyStatus } from '@/lib/proxy';
 import { prisma, isPrismaAvailable } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 // Route segment config for Vercel
 export const runtime = 'nodejs';
@@ -513,8 +513,8 @@ export async function POST(
                     if (!existingUser) {
                         console.log(`📝 User ${userId} doesn't exist, creating it...`);
                         // Get email from Clerk if available
-                        const { currentUser } = await auth();
-                        const userEmail = currentUser?.emailAddresses?.[0]?.emailAddress || `${userId}@clerk.local`;
+                        const clerkUser = await currentUser();
+                        const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || `${userId}@clerk.local`;
                         
                         await prisma.user.create({
                             data: {
