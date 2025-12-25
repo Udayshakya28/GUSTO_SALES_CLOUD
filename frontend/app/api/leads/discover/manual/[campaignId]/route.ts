@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getGroqClient, handleGroqError } from '@/lib/groq';
+import { fetchWithProxy, isProxyEnabled, getProxyStatus } from '@/lib/proxy';
 
 // Route segment config for Vercel
 export const runtime = 'nodejs';
@@ -97,12 +98,16 @@ export async function POST(
         }
 
         const discoveredLeads: any[] = [];
+        const proxyStatus = getProxyStatus();
         const diagnostics: any = {
             subredditsSearched: [],
             errors: [],
             postsFound: 0,
             groqAvailable: !!getGroqClient(),
             groqModel: process.env.GROQ_MODEL || "llama3-70b-8192",
+            proxyEnabled: proxyStatus.enabled,
+            proxyType: proxyStatus.type,
+            proxyConfigured: proxyStatus.configured,
         };
 
         // Search via Reddit Public JSON API (no authentication required)
@@ -153,7 +158,10 @@ export async function POST(
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
                         
-                        res = await fetch(endpoint.url, { 
+                        // Use proxy if enabled, otherwise direct fetch
+                        const fetchFunction = isProxyEnabled() ? fetchWithProxy : fetch;
+                        
+                        res = await fetchFunction(endpoint.url, { 
                             headers: { 
                                 'User-Agent': userAgent,
                                 'Accept': 'application/json',
@@ -283,10 +291,14 @@ export async function POST(
         const allBlocked = diagnostics.errors.length > 0 && 
                           diagnostics.errors.every((e: any) => e.status === 403);
         
+        // Count how many endpoints were tried
+        const endpointsTried = diagnostics.subredditsSearched?.length || 0;
+        const totalEndpointsAttempted = endpointsTried * 3; // 3 endpoints per subreddit
+        
         // Ensure all data is serializable
         const responseData = {
             message: allBlocked 
-                ? 'Discovery complete but Reddit API blocked all requests (403). This is a known issue with Reddit blocking requests from cloud providers like Vercel.'
+                ? `Discovery complete but Reddit API blocked all ${totalEndpointsAttempted} endpoint attempts (403). Reddit blocks requests from cloud providers like Vercel. Solutions: 1) Use Reddit's official OAuth API (requires app registration), 2) Use a proxy service, or 3) Run discovery locally where it works.`
                 : 'Discovery complete',
             count: discoveredLeads.length,
             diagnostics: {
@@ -296,6 +308,8 @@ export async function POST(
                 groqAvailable: diagnostics.groqAvailable,
                 groqModel: diagnostics.groqModel,
                 allBlocked: allBlocked,
+                endpointsAttempted: totalEndpointsAttempted,
+                note: allBlocked ? 'Reddit blocks cloud provider IPs. Consider using Reddit OAuth API or a proxy.' : undefined
             },
             subredditsSearched: Array.isArray(targetSubreddits) ? [...targetSubreddits] : [],
             keywordsUsed: Array.isArray(generatedKeywords) ? [...generatedKeywords] : []

@@ -183,7 +183,16 @@ export const DiscoveryButtons: React.FC<DiscoveryButtonsProps> = ({
             const firstError = result.diagnostics.errors[0];
             if (firstError?.status === 403) {
               toast.error('Reddit API Blocked (403)', {
-                description: `Reddit is blocking requests from Vercel's servers. This is a known limitation - Reddit blocks automated requests from cloud providers. Try using Reddit's official API with OAuth instead.`
+                description: `Reddit is blocking all requests from Vercel's servers. This is a known limitation - Reddit blocks automated requests from cloud providers. Solutions: 1) Use Reddit's official OAuth API, 2) Use a proxy service, or 3) Run discovery locally.`,
+                duration: 10000, // Show for 10 seconds
+              });
+              
+              // Log detailed information for debugging
+              console.error('🚫 Reddit IP Blocking Issue:', {
+                message: 'Reddit blocks requests from cloud providers like Vercel',
+                solution: 'Use Reddit OAuth API or proxy service',
+                endpointsTried: result.diagnostics.subredditsSearched?.map((s: any) => s.type || s.url) || [],
+                allErrors: result.diagnostics.errors
               });
             } else if (firstError?.status === 401) {
               toast.error('Reddit API Access Denied', {
