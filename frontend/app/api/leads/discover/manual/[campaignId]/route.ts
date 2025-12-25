@@ -671,6 +671,40 @@ export async function POST(
                     data: { lastManualDiscoveryAt: new Date() }
                 });
                 
+                // Send email notification if leads were discovered and notifications are enabled
+                if (savedCount > 0) {
+                    try {
+                        const { sendLeadDiscoveryEmail, isEmailNotificationsEnabled } = await import('@/lib/email');
+                        
+                        const settings = await isEmailNotificationsEnabled(userId);
+                        
+                        if (settings.enabled && settings.email) {
+                            // Get user's first name for personalization
+                            const user = await currentUser();
+                            const firstName = user?.firstName || undefined;
+                            const campaignName = campaign?.name || 'Your Campaign';
+                            
+                            const result = await sendLeadDiscoveryEmail(
+                                settings.email,
+                                campaignName,
+                                savedCount,
+                                firstName
+                            );
+                            
+                            if (result.success) {
+                                console.log(`✅ Lead discovery email sent to ${settings.email}`);
+                            } else {
+                                console.error(`❌ Failed to send lead discovery email: ${result.error}`);
+                            }
+                        } else {
+                            console.log(`ℹ️ Email notifications disabled or no email configured for user ${userId}`);
+                        }
+                    } catch (emailError: any) {
+                        console.error(`❌ Error sending lead discovery email:`, emailError);
+                        // Don't fail the discovery if email fails
+                    }
+                }
+                
                 // Verify leads were saved - check multiple ways
                 const verifyLeadsAll = await prisma.lead.count({
                     where: { campaignId: campaignId }

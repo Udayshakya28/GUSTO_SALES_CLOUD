@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 
 export const NotificationSettings = () => {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const [email, setEmail] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,18 +22,26 @@ export const NotificationSettings = () => {
       try {
         const settings = await api.getEmailSettings(token);
         if (settings) {
-          setEmail(settings.email);
+          // Use email from settings, or fallback to Clerk email
+          setEmail(settings.email || user?.emailAddresses?.[0]?.emailAddress || '');
           setEnabled(settings.enabled);
+        } else {
+          // If no settings exist, use Clerk email as default
+          setEmail(user?.emailAddresses?.[0]?.emailAddress || '');
         }
       } catch (error) {
         console.error('Failed to fetch email settings:', error);
         showMessage('Failed to load your notification settings.', 'error');
+        // Fallback to Clerk email
+        setEmail(user?.emailAddresses?.[0]?.emailAddress || '');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSettings();
-  }, [getToken]);
+    if (user) {
+      fetchSettings();
+    }
+  }, [getToken, user]);
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
