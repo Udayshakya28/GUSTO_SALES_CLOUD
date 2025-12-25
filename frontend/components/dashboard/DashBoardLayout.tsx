@@ -121,11 +121,26 @@ export const DashboardLayout = () => {
       
       // Log debug info if available
       if (response.debug) {
-        console.log('🔍 API Debug Info:', response.debug);
+        console.log('🔍 API Debug Info:', JSON.stringify(response.debug, null, 2));
+        console.log('🔍 Debug Details:', {
+          totalLeadsInCampaign: response.debug.prisma?.totalLeadsInCampaign,
+          leadsWithUserId: response.debug.prisma?.leadsWithUserId,
+          leadsWithoutUserId: response.debug.prisma?.leadsWithoutUserId,
+          campaignExists: response.debug.prisma?.campaignExists,
+          campaignUserId: response.debug.prisma?.campaignUserId,
+          currentUserId: response.debug.userId,
+          userIdMatch: response.debug.prisma?.userIdMatch
+        });
       }
       
       // Handle both array and object responses
       const rawLeads = Array.isArray(response.data) ? response.data : (response.data || response || []);
+      
+      console.log('📋 After extracting rawLeads:', {
+        isArray: Array.isArray(rawLeads),
+        length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',
+        firstLead: Array.isArray(rawLeads) && rawLeads.length > 0 ? rawLeads[0] : null
+      });
       console.log('📋 Raw leads:', {
         isArray: Array.isArray(rawLeads),
         length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',

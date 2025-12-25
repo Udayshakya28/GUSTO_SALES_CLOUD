@@ -89,59 +89,67 @@ export async function GET(
                     currentUserId: userId
                 });
                 
-                // Try fetching with userId first, then without if no results
-                let prismaLeads = await prisma.lead.findMany({
+                // TEMPORARY: Fetch ALL leads for campaign regardless of userId (for debugging)
+                // This helps us see if leads exist but have wrong userId
+                const allCampaignLeads = await prisma.lead.findMany({
                     where: { 
-                        campaignId: campaignId,
-                        userId: userId
+                        campaignId: campaignId
                     },
                     orderBy: { discoveredAt: 'desc' }
                 });
                 
-                console.log(`📊 Leads found with userId filter (${userId}): ${prismaLeads.length}`);
+                console.log(`📊 Total leads in campaign (all userIds): ${allCampaignLeads.length}`);
                 
-                // If no leads found with userId, try without userId filter (for debugging)
-                if (prismaLeads.length === 0) {
-                    const allCampaignLeads = await prisma.lead.findMany({
-                        where: { 
-                            campaignId: campaignId
-                        },
-                        orderBy: { discoveredAt: 'desc' },
-                        take: 10 // Limit for debugging
-                    });
-                    console.log(`📊 Leads found without userId filter: ${allCampaignLeads.length}`);
-                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 5).map((l: any) => ({ 
+                // Check userId distribution
+                const userIdCounts: Record<string, number> = {};
+                allCampaignLeads.forEach((lead: any) => {
+                    userIdCounts[lead.userId] = (userIdCounts[lead.userId] || 0) + 1;
+                });
+                console.log(`📊 Lead userId distribution:`, userIdCounts);
+                console.log(`📊 Current userId: ${userId}`);
+                
+                // Log sample leads
+                if (allCampaignLeads.length > 0) {
+                    console.log(`🔍 Sample leads:`, allCampaignLeads.slice(0, 3).map((l: any) => ({ 
                         id: l.id, 
                         redditId: l.redditId,
                         userId: l.userId,
-                        title: l.title?.substring(0, 30)
+                        title: l.title?.substring(0, 30),
+                        campaignId: l.campaignId
                     })));
-                    
-                    // Use all leads if campaign exists and belongs to user
-                    if (campaign && campaign.userId === userId) {
-                        console.log(`✅ Campaign belongs to user, using all ${allCampaignLeads.length} leads`);
-                        prismaLeads = allCampaignLeads;
-                    } else if (campaign && campaign.userId !== userId) {
-                        console.warn(`⚠️ Campaign belongs to different user (${campaign.userId}), but using all leads anyway`);
-                        // Update campaign userId to current user
-                        try {
-                            await prisma.campaign.update({
-                                where: { id: campaignId },
+                }
+                
+                // Use all leads for now (temporary fix)
+                let prismaLeads = allCampaignLeads;
+                
+                // If campaign exists but userId doesn't match, update it
+                if (campaign && campaign.userId !== userId && allCampaignLeads.length > 0) {
+                    console.warn(`⚠️ Campaign userId mismatch (${campaign.userId} vs ${userId}), updating campaign...`);
+                    try {
+                        await prisma.campaign.update({
+                            where: { id: campaignId },
+                            data: { userId: userId }
+                        });
+                        console.log(`✅ Updated campaign userId to ${userId}`);
+                        
+                        // Also update all leads to have correct userId
+                        if (allCampaignLeads.some((l: any) => l.userId !== userId)) {
+                            console.log(`🔄 Updating leads userId to ${userId}...`);
+                            await prisma.lead.updateMany({
+                                where: { 
+                                    campaignId: campaignId,
+                                    userId: { not: userId }
+                                },
                                 data: { userId: userId }
                             });
-                            console.log(`✅ Updated campaign userId to ${userId}`);
-                        } catch (updateError: any) {
-                            console.error(`❌ Failed to update campaign userId:`, updateError);
+                            console.log(`✅ Updated leads userId`);
                         }
-                        prismaLeads = allCampaignLeads;
-                    } else if (allCampaignLeads.length > 0) {
-                        // Campaign not found but leads exist - use them anyway
-                        console.warn(`⚠️ Campaign not found in Prisma but ${allCampaignLeads.length} leads exist, using them`);
-                        prismaLeads = allCampaignLeads;
-                    } else {
-                        console.warn(`⚠️ No leads found - campaign may not exist or no leads saved yet`);
+                    } catch (updateError: any) {
+                        console.error(`❌ Failed to update campaign/leads userId:`, updateError);
                     }
                 }
+                
+                console.log(`✅ Using ${prismaLeads.length} leads for campaign ${campaignId}`);
                 
                 // Convert Prisma leads to API format
                 leads = prismaLeads.map((lead: any) => ({
