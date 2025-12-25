@@ -49,13 +49,48 @@ export async function GET(
                     throw connError;
                 }
                 
-                const prismaLeads = await prisma.lead.findMany({
+                // First, check if campaign exists and get all leads for it
+                const campaign = await prisma.campaign.findUnique({
+                    where: { id: campaignId },
+                    include: { leads: true }
+                });
+                
+                console.log(`🔍 Campaign check:`, {
+                    campaignExists: !!campaign,
+                    campaignUserId: campaign?.userId,
+                    currentUserId: userId,
+                    userIdMatch: campaign?.userId === userId,
+                    totalLeadsInCampaign: campaign?.leads.length || 0
+                });
+                
+                // Try fetching with userId first, then without if no results
+                let prismaLeads = await prisma.lead.findMany({
                     where: { 
                         campaignId: campaignId,
-                        userId: userId // Ensure user owns the leads
+                        userId: userId
                     },
                     orderBy: { discoveredAt: 'desc' }
                 });
+                
+                console.log(`📊 Leads found with userId filter: ${prismaLeads.length}`);
+                
+                // If no leads found with userId, try without userId filter (for debugging)
+                if (prismaLeads.length === 0) {
+                    const allCampaignLeads = await prisma.lead.findMany({
+                        where: { 
+                            campaignId: campaignId
+                        },
+                        orderBy: { discoveredAt: 'desc' }
+                    });
+                    console.log(`📊 Leads found without userId filter: ${allCampaignLeads.length}`);
+                    console.log(`🔍 Sample lead userIds:`, allCampaignLeads.slice(0, 3).map(l => ({ id: l.id, userId: l.userId })));
+                    
+                    // Use all leads if campaign exists and belongs to user
+                    if (campaign && campaign.userId === userId) {
+                        prismaLeads = allCampaignLeads;
+                        console.log(`✅ Using all campaign leads (campaign belongs to user)`);
+                    }
+                }
                 
                 // Convert Prisma leads to API format
                 leads = prismaLeads.map((lead: any) => ({
@@ -106,7 +141,10 @@ export async function GET(
             debug: {
                 campaignId,
                 leadCount: leads.length,
-                source: 'prisma' // or 'in-memory'
+                source: source, // 'prisma' or 'in-memory'
+                userId: userId,
+                prismaAvailable: isPrismaAvailable(),
+                databaseUrlSet: !!process.env.DATABASE_URL
             }
         });
     } catch (error: any) {

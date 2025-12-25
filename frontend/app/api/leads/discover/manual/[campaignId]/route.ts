@@ -65,7 +65,33 @@ export async function POST(
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const campaign = db.getCampaign(campaignId);
+        // Check campaign in both Prisma and in-memory db
+        let campaign: any = null;
+        
+        if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+            try {
+                campaign = await prisma.campaign.findUnique({
+                    where: { id: campaignId }
+                });
+                console.log(`🔍 Campaign check in Prisma:`, {
+                    found: !!campaign,
+                    campaignId,
+                    campaignUserId: campaign?.userId,
+                    currentUserId: userId
+                });
+            } catch (e) {
+                console.warn('⚠️ Error checking campaign in Prisma:', e);
+            }
+        }
+        
+        // Fallback to in-memory db
+        if (!campaign) {
+            campaign = db.getCampaign(campaignId);
+            console.log(`🔍 Campaign check in in-memory db:`, {
+                found: !!campaign,
+                campaignId
+            });
+        }
 
         if (!campaign) {
             console.error(`❌ Campaign not found: ${campaignId}`);
@@ -75,8 +101,20 @@ export async function POST(
                 message: 'Campaign not found',
                 campaignId,
                 availableCampaigns: allCampaigns.map(c => ({ id: c.id, name: c.name })),
-                note: 'In-memory database resets on each deployment. Campaign may need to be recreated.'
+                note: 'Campaign may need to be created in the database first.'
             }, { status: 404 });
+        }
+        
+        // If campaign exists in Prisma but userId doesn't match, that's a problem
+        if (campaign.userId && campaign.userId !== userId) {
+            console.error(`❌ Campaign userId mismatch:`, {
+                campaignUserId: campaign.userId,
+                currentUserId: userId
+            });
+            return NextResponse.json({ 
+                message: 'Campaign belongs to a different user',
+                campaignId
+            }, { status: 403 });
         }
 
         const { targetSubreddits, generatedKeywords } = campaign;
@@ -365,6 +403,16 @@ export async function POST(
                                 userId: userId,
                                 type: lead.type,
                             }
+                        });
+                        
+                        // Log first few saves for debugging
+                        if (savedCount < 3) {
+                            console.log(`💾 Saved lead ${savedCount + 1}:`, {
+                                redditId: lead.redditId,
+                                title: lead.title.substring(0, 50),
+                                userId: userId,
+                                campaignId: campaignId
+                            });
                         });
                         savedCount++;
                     } catch (error: any) {

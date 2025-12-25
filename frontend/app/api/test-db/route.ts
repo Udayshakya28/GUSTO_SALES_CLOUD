@@ -38,10 +38,27 @@ export async function GET() {
                 include: { leads: true }
             });
             
+            // Get all campaigns
+            const allCampaigns = await prisma.campaign.findMany({
+                take: 5,
+                select: { id: true, name: true, userId: true }
+            });
+            
+            // Get leads for demo campaign without userId filter
+            const allDemoLeads = await prisma.lead.findMany({
+                where: { campaignId: 'demo-campaign-1' },
+                take: 5,
+                select: { id: true, redditId: true, userId: true, title: true }
+            });
+            
             diagnostics.demoCampaign = {
                 exists: !!demoCampaign,
                 leadCount: demoCampaign?.leads.length || 0,
+                campaignUserId: demoCampaign?.userId,
             };
+            
+            diagnostics.allCampaigns = allCampaigns;
+            diagnostics.demoCampaignLeads = allDemoLeads;
             
             await prisma.$disconnect();
         } catch (error: any) {

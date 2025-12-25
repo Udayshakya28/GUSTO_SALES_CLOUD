@@ -10,6 +10,8 @@ const isPublicRoute = createRouteMatcher([
     '/sign-in(.*)',
     '/sign-up(.*)',
     '/api/clerk-webhooks', // Ensure the webhook is public
+    '/api/test-db', // Database test endpoint (public for diagnostics)
+    '/api/diagnostic', // Diagnostic endpoint (public)
 ]);
 
 // This is the main middleware function.
