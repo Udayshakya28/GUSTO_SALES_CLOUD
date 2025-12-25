@@ -112,11 +112,17 @@ export const DashboardLayout = () => {
         dataType: Array.isArray(allLeadsResponse.data) ? 'array' : typeof allLeadsResponse.data,
         dataLength: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.length : 'N/A',
         responseKeys: Object.keys(allLeadsResponse),
-        sampleData: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.slice(0, 2) : allLeadsResponse.data
+        sampleData: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.slice(0, 2) : allLeadsResponse.data,
+        debug: allLeadsResponse.debug || 'No debug info'
       });
       
+      // Log debug info if available
+      if (allLeadsResponse.debug) {
+        console.log('🔍 API Debug Info:', allLeadsResponse.debug);
+      }
+      
       // Handle both array and object responses
-      const rawLeads = allLeadsResponse.data || allLeadsResponse || [];
+      const rawLeads = Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data : (allLeadsResponse.data || allLeadsResponse || []);
       console.log('📋 Raw leads:', {
         isArray: Array.isArray(rawLeads),
         length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',

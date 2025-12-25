@@ -122,10 +122,24 @@ export async function GET(
                         console.log(`✅ Campaign belongs to user, using all ${allCampaignLeads.length} leads`);
                         prismaLeads = allCampaignLeads;
                     } else if (campaign && campaign.userId !== userId) {
-                        console.warn(`⚠️ Campaign belongs to different user (${campaign.userId}), but using all leads anyway for debugging`);
+                        console.warn(`⚠️ Campaign belongs to different user (${campaign.userId}), but using all leads anyway`);
+                        // Update campaign userId to current user
+                        try {
+                            await prisma.campaign.update({
+                                where: { id: campaignId },
+                                data: { userId: userId }
+                            });
+                            console.log(`✅ Updated campaign userId to ${userId}`);
+                        } catch (updateError: any) {
+                            console.error(`❌ Failed to update campaign userId:`, updateError);
+                        }
+                        prismaLeads = allCampaignLeads;
+                    } else if (allCampaignLeads.length > 0) {
+                        // Campaign not found but leads exist - use them anyway
+                        console.warn(`⚠️ Campaign not found in Prisma but ${allCampaignLeads.length} leads exist, using them`);
                         prismaLeads = allCampaignLeads;
                     } else {
-                        console.warn(`⚠️ Campaign not found or userId mismatch, but no leads found with userId filter`);
+                        console.warn(`⚠️ No leads found - campaign may not exist or no leads saved yet`);
                     }
                 }
                 
@@ -181,16 +195,51 @@ export async function GET(
             console.log(`📊 Found ${leads.length} leads in in-memory database for campaign ${campaignId}`);
         }
         
+        // Enhanced debug info
+        const debugInfo: any = {
+            campaignId,
+            leadCount: leads.length,
+            source: source, // 'prisma' or 'in-memory'
+            userId: userId,
+            prismaAvailable: isPrismaAvailable(),
+            databaseUrlSet: !!process.env.DATABASE_URL
+        };
+        
+        // Add Prisma-specific debug info if used
+        if (source === 'prisma' && isPrismaAvailable() && prisma) {
+            try {
+                const totalLeadsInCampaign = await prisma.lead.count({
+                    where: { campaignId: campaignId }
+                });
+                const leadsWithUserId = await prisma.lead.count({
+                    where: { 
+                        campaignId: campaignId,
+                        userId: userId
+                    }
+                });
+                const campaignCheck = await prisma.campaign.findUnique({
+                    where: { id: campaignId },
+                    select: { id: true, userId: true, name: true }
+                });
+                
+                debugInfo.prisma = {
+                    totalLeadsInCampaign,
+                    leadsWithUserId,
+                    leadsWithoutUserId: totalLeadsInCampaign - leadsWithUserId,
+                    campaignExists: !!campaignCheck,
+                    campaignUserId: campaignCheck?.userId,
+                    userIdMatch: campaignCheck?.userId === userId
+                };
+            } catch (e: any) {
+                debugInfo.prismaError = e.message;
+            }
+        }
+        
+        console.log(`📤 Returning response with debug info:`, debugInfo);
+        
         return NextResponse.json({ 
             data: leads,
-            debug: {
-                campaignId,
-                leadCount: leads.length,
-                source: source, // 'prisma' or 'in-memory'
-                userId: userId,
-                prismaAvailable: isPrismaAvailable(),
-                databaseUrlSet: !!process.env.DATABASE_URL
-            }
+            debug: debugInfo
         });
     } catch (error: any) {
         console.error('❌ Error fetching leads:', error);
