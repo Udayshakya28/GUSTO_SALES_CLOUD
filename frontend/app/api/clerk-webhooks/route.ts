@@ -121,8 +121,9 @@ export async function POST(request: Request) {
                     
                     // Only send sign-in email if notifications are enabled
                     if (email && settings.enabled) {
-                        const ipAddress = headers().get('x-forwarded-for') || 
-                                        headers().get('x-real-ip') || 
+                        const headerPayload = await headers();
+                        const ipAddress = headerPayload.get('x-forwarded-for') || 
+                                        headerPayload.get('x-real-ip') || 
                                         'Unknown';
                         
                         const result = await sendSignInEmail(email, firstName, ipAddress);
