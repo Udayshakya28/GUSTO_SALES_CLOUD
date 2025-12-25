@@ -25,6 +25,7 @@ interface DiscoveryButtonsProps {
 
 interface ApiResponse {
   length?: number;
+  count?: number;
   leads?: unknown[];
   subredditsSearched?: string[];
   message?: string;
