@@ -280,7 +280,14 @@ export async function POST(
             }
         }
 
-        db.addLeads(campaignId, discoveredLeads);
+        // Save leads to database
+        const savedLeads = db.addLeads(campaignId, discoveredLeads);
+        console.log(`💾 Saved ${discoveredLeads.length} leads to database for campaign ${campaignId}`);
+        console.log(`📊 Total leads in database for ${campaignId}: ${savedLeads.length}`);
+        
+        // Verify leads were saved
+        const verifyLeads = db.getLeads(campaignId);
+        console.log(`✅ Verification: ${verifyLeads.length} leads found in database for ${campaignId}`);
 
         // Update last discovery timestamp
         db.updateCampaign(campaignId, { 
