@@ -106,23 +106,26 @@ export const DashboardLayout = () => {
         limit: 1000,
       }, token);
       
+      // Type assertion to include debug property
+      const response = allLeadsResponse as { data: any; debug?: any };
+      
       console.log('📥 Raw API response:', {
-        responseType: typeof allLeadsResponse,
-        hasData: !!allLeadsResponse.data,
-        dataType: Array.isArray(allLeadsResponse.data) ? 'array' : typeof allLeadsResponse.data,
-        dataLength: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.length : 'N/A',
-        responseKeys: Object.keys(allLeadsResponse),
-        sampleData: Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data.slice(0, 2) : allLeadsResponse.data,
-        debug: allLeadsResponse.debug || 'No debug info'
+        responseType: typeof response,
+        hasData: !!response.data,
+        dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A',
+        responseKeys: Object.keys(response),
+        sampleData: Array.isArray(response.data) ? response.data.slice(0, 2) : response.data,
+        debug: response.debug || 'No debug info'
       });
       
       // Log debug info if available
-      if (allLeadsResponse.debug) {
-        console.log('🔍 API Debug Info:', allLeadsResponse.debug);
+      if (response.debug) {
+        console.log('🔍 API Debug Info:', response.debug);
       }
       
       // Handle both array and object responses
-      const rawLeads = Array.isArray(allLeadsResponse.data) ? allLeadsResponse.data : (allLeadsResponse.data || allLeadsResponse || []);
+      const rawLeads = Array.isArray(response.data) ? response.data : (response.data || response || []);
       console.log('📋 Raw leads:', {
         isArray: Array.isArray(rawLeads),
         length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',
