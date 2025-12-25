@@ -59,6 +59,8 @@ export async function GET() {
 
             // Try to get user info to verify token is valid
             try {
+                // Use @ts-ignore to avoid TypeScript circular reference issue with Snoowrap types
+                // @ts-ignore - Snoowrap has circular type references in getMe() return type
                 const me = await r.getMe();
                 return NextResponse.json({
                     connected: true,
