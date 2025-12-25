@@ -158,13 +158,21 @@ export const ReplyModal = ({ lead, isOpen, onClose, onLeadUpdate }: Props) => {
 
     try {
       const token = await getToken();
-      await api.postReply(lead.id, text, token);
+      // Pass both leadId (for status update) and redditId (for Reddit API)
+      await api.postReply(lead.id, lead.redditId, text, token);
 
       onLeadUpdate(lead.id, 'replied');
       onClose();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to post reply.');
+      let errorMessage = err.message || 'Failed to post reply.';
+      
+      // Handle AI content detection error with helpful message
+      if (err.message && (err.message.includes('AI-generated') || err.message.includes('AI_CONTENT_DETECTED') || err.message.includes('AI-polished'))) {
+        errorMessage = 'Reddit detected AI-generated content and blocked the reply. Please edit the reply to make it more personal and human-written, or write it yourself.';
+      }
+      
+      setError(errorMessage);
       setReplyOptions(prev => prev.map(r => r.id === replyId ? { ...r, isPosting: false } : r));
     }
   };

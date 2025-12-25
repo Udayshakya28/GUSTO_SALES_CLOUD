@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Snoowrap from 'snoowrap';
 import { db } from '@/lib/db';
+import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,12 +10,57 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
-        const { leadId, content } = await request.json();
+        const { leadId, redditId, content } = await request.json();
 
         // 1. Validate Input
-        if (!leadId || !content) {
-            return NextResponse.json({ message: 'leadId and content are required' }, { status: 400 });
+        if (!content) {
+            return NextResponse.json({ message: 'content is required' }, { status: 400 });
         }
+        
+        // Determine the Reddit post ID to reply to
+        // redditId takes precedence (direct Reddit post ID), otherwise fetch from database
+        let postId = redditId;
+        
+        if (!postId && leadId) {
+            // Try to fetch redditId from database
+            console.log(`🔍 Looking up redditId for leadId: ${leadId}`);
+            
+            // Try Prisma first
+            if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                try {
+                    const lead = await prisma.lead.findUnique({
+                        where: { id: leadId },
+                        select: { redditId: true }
+                    });
+                    
+                    if (lead && lead.redditId) {
+                        postId = lead.redditId;
+                        console.log(`✅ Found redditId in Prisma: ${postId}`);
+                    }
+                } catch (e: any) {
+                    console.warn(`⚠️ Prisma lookup failed: ${e.message}`);
+                }
+            }
+            
+            // Fallback to in-memory database
+            if (!postId) {
+                const lead = db.getLead(leadId);
+                if (lead && lead.redditId) {
+                    postId = lead.redditId;
+                    console.log(`✅ Found redditId in in-memory DB: ${postId}`);
+                }
+            }
+        }
+        
+        if (!postId) {
+            return NextResponse.json({ 
+                message: 'Could not determine Reddit post ID. Please provide redditId or a valid leadId.',
+                leadId: leadId,
+                redditId: redditId
+            }, { status: 400 });
+        }
+        
+        console.log(`📝 Attempting to reply to Reddit post: ${postId} (leadId: ${leadId}, redditId: ${redditId})`);
 
         // 2. Resolve Credentials
         let clientId = process.env.REDDIT_CLIENT_ID;
@@ -54,24 +100,111 @@ export async function POST(request: Request) {
 
             if (r) {
                 try {
-                    const submission = r.getSubmission(leadId);
+                    // Verify token is valid by getting user info first
+                    try {
+                        const me = await r.getMe();
+                        console.log(`✅ Authenticated as Reddit user: ${me.name}`);
+                    } catch (authError: any) {
+                        console.error("❌ Token validation failed:", authError.message);
+                        return NextResponse.json({
+                            message: 'Reddit authentication failed. The DEVVIT_TOKEN may be expired or invalid.',
+                            details: authError.message,
+                            error: authError.statusCode || authError.status || 'AUTH_ERROR'
+                        }, { status: 401 });
+                    }
+                    
+                    // Get the submission - postId should be the Reddit post ID (e.g., "1abc2de")
+                    // Remove "t3_" prefix if present (Reddit fullname format)
+                    const cleanPostId = postId.replace(/^t3_/, '');
+                    console.log(`📤 Replying to Reddit post ID: ${cleanPostId}`);
+                    
+                    const submission = r.getSubmission(cleanPostId);
                     // @ts-ignore - TypeScript circular reference issue with snoowrap types
                     const reply = await submission.reply(content);
-                    db.updateLeadStatus(leadId, 'replied');
-                    return NextResponse.json({ message: 'Reply posted', redditId: reply.id });
+                    
+                    console.log(`✅ Reply posted successfully: ${reply.id}`);
+                    
+                    // Update lead status if leadId was provided
+                    if (leadId) {
+                        try {
+                            // Try Prisma first
+                            if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                                await prisma.lead.update({
+                                    where: { id: leadId },
+                                    data: { status: 'replied' }
+                                });
+                                console.log(`✅ Updated lead ${leadId} status to 'replied' in Prisma`);
+                            }
+                            // Also update in-memory for consistency
+                            db.updateLeadStatus(leadId, 'replied');
+                        } catch (statusError: any) {
+                            console.error(`⚠️ Failed to update lead status: ${statusError.message}`);
+                            // Don't fail the whole request if status update fails
+                        }
+                    }
+                    
+                    return NextResponse.json({ 
+                        message: 'Reply posted successfully', 
+                        redditId: reply.id,
+                        postId: cleanPostId
+                    });
                 } catch (apiError: any) {
-                    console.error("Devvit ID-based post failed", apiError);
+                    const errorMessage = apiError.message || apiError.error?.message || String(apiError.error || apiError);
+                    console.error("❌ Devvit ID-based post failed", {
+                        error: errorMessage,
+                        statusCode: apiError.statusCode || apiError.status,
+                        postId: postId,
+                        cleanPostId: postId.replace(/^t3_/, ''),
+                        errorDetails: apiError.error || apiError.response?.body || apiError
+                    });
 
-                    // If it's a USER_REQUIRED error, return 401 instead of falling through
-                    if (apiError.message && (apiError.message.includes("USER_REQUIRED") || apiError.message.includes("log in"))) {
+                    // Handle Reddit's AI content detection (COMMENT_GUIDANCE_VALIDATION_FAILED)
+                    if (errorMessage.includes('COMMENT_GUIDANCE_VALIDATION_FAILED') || 
+                        errorMessage.includes('AI-generated') || 
+                        errorMessage.includes('AI-polished')) {
+                        return NextResponse.json({
+                            message: 'Reddit detected AI-generated content and blocked the reply. Reddit\'s policy prohibits AI-generated or AI-polished comments. Please edit the reply to make it more personal and human-written before posting.',
+                            details: errorMessage,
+                            error: 'AI_CONTENT_DETECTED',
+                            suggestion: 'Try editing the reply to add personal touches, remove AI-like phrasing, or write it yourself.',
+                            postId: postId
+                        }, { status: 400 });
+                    }
+                    
+                    // Handle specific error types
+                    if (apiError.statusCode === 403 || apiError.status === 403) {
+                        return NextResponse.json({
+                            message: 'Forbidden: Reddit rejected the reply. This may be due to insufficient permissions, rate limiting, or the post being locked/deleted.',
+                            details: errorMessage,
+                            error: 'FORBIDDEN',
+                            postId: postId
+                        }, { status: 403 });
+                    }
+                    
+                    if (apiError.statusCode === 401 || apiError.status === 401) {
                         return NextResponse.json({
                             message: 'Authentication failed: Reddit requires user context. The provided Devvit token may be expired or lack permissions.',
-                            details: apiError.message
+                            details: errorMessage,
+                            error: 'AUTH_FAILED'
+                        }, { status: 401 });
+                    }
+                    
+                    // If it's a USER_REQUIRED error, return 401 instead of falling through
+                    if (errorMessage.includes("USER_REQUIRED") || errorMessage.includes("log in")) {
+                        return NextResponse.json({
+                            message: 'Authentication failed: Reddit requires user context. The provided Devvit token may be expired or lack permissions.',
+                            details: errorMessage,
+                            error: 'USER_REQUIRED'
                         }, { status: 401 });
                     }
 
-                    // For other errors, we might want to let it fall through or return error
-                    return NextResponse.json({ message: `Failed to post reply with Devvit token: ${apiError.message}` }, { status: 500 });
+                    // For other errors, return detailed error
+                    return NextResponse.json({ 
+                        message: `Failed to post reply: ${errorMessage || 'Unknown error'}`,
+                        details: apiError.error || apiError.response?.body,
+                        error: apiError.statusCode || apiError.status || 'UNKNOWN_ERROR',
+                        postId: postId
+                    }, { status: apiError.statusCode || apiError.status || 500 });
                 }
             }
         }
@@ -101,10 +234,26 @@ export async function POST(request: Request) {
                                     accessToken: innerToken.accessToken
                                 });
 
-                                const submission = r.getSubmission(leadId);
+                                const cleanPostId = postId.replace(/^t3_/, '');
+                                const cleanPostId = postId.replace(/^t3_/, '');
+                                const submission = r.getSubmission(cleanPostId);
                                 // @ts-ignore - TypeScript circular reference issue with snoowrap types
                                 const reply = await submission.reply(content);
-                                db.updateLeadStatus(leadId, 'replied');
+                                if (leadId) {
+                                    try {
+                                        // Try Prisma first
+                                        if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                                            await prisma.lead.update({
+                                                where: { id: leadId },
+                                                data: { status: 'replied' }
+                                            });
+                                        }
+                                        // Also update in-memory for consistency
+                                        db.updateLeadStatus(leadId, 'replied');
+                                    } catch (statusError: any) {
+                                        console.error(`⚠️ Failed to update lead status: ${statusError.message}`);
+                                    }
+                                }
                                 return NextResponse.json({ message: 'Reply posted', redditId: reply.id });
                             }
                         } catch (parseError) {
@@ -133,10 +282,25 @@ export async function POST(request: Request) {
             refreshToken,
         });
 
-        const submission = r.getSubmission(leadId);
+        const cleanPostId = postId.replace(/^t3_/, '');
+        const submission = r.getSubmission(cleanPostId);
         // @ts-ignore - TypeScript circular reference issue with snoowrap types
         const reply = await submission.reply(content);
-        db.updateLeadStatus(leadId, 'replied');
+        if (leadId) {
+            try {
+                // Try Prisma first
+                if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                    await prisma.lead.update({
+                        where: { id: leadId },
+                        data: { status: 'replied' }
+                    });
+                }
+                // Also update in-memory for consistency
+                db.updateLeadStatus(leadId, 'replied');
+            } catch (statusError: any) {
+                console.error(`⚠️ Failed to update lead status: ${statusError.message}`);
+            }
+        }
 
         return NextResponse.json({
             message: 'Reply posted successfully',

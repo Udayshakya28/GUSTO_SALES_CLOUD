@@ -538,40 +538,64 @@ export async function POST(
                     }
                 }
                 
-                // Ensure Campaign exists in database
-                if (!campaign || !campaign.id) {
-                    console.log(`📝 Campaign ${campaignId} doesn't exist in Prisma, creating it...`);
-                    try {
+                // Ensure Campaign exists in database - CRITICAL: Must exist before saving leads
+                let campaignExists = false;
+                try {
+                    const existingCampaign = await prisma.campaign.findUnique({
+                        where: { id: campaignId }
+                    });
+                    
+                    if (!existingCampaign) {
+                        console.log(`📝 Campaign ${campaignId} doesn't exist in Prisma, creating it...`);
                         const inMemoryCampaign = db.getCampaign(campaignId);
-                        campaign = await prisma.campaign.create({
+                        
+                        await prisma.campaign.create({
                             data: {
                                 id: campaignId,
                                 userId: userId,
-                                name: inMemoryCampaign?.name || 'Untitled Campaign',
-                                analyzedUrl: inMemoryCampaign?.analyzedUrl || '',
-                                generatedKeywords: inMemoryCampaign?.generatedKeywords || [],
-                                generatedDescription: inMemoryCampaign?.generatedDescription || '',
-                                targetSubreddits: inMemoryCampaign?.targetSubreddits || [],
-                                competitors: inMemoryCampaign?.competitors || [],
+                                name: inMemoryCampaign?.name || campaign?.name || 'Untitled Campaign',
+                                analyzedUrl: inMemoryCampaign?.analyzedUrl || campaign?.analyzedUrl || '',
+                                generatedKeywords: inMemoryCampaign?.generatedKeywords || campaign?.generatedKeywords || [],
+                                generatedDescription: inMemoryCampaign?.generatedDescription || campaign?.generatedDescription || '',
+                                targetSubreddits: inMemoryCampaign?.targetSubreddits || campaign?.targetSubreddits || [],
+                                competitors: inMemoryCampaign?.competitors || campaign?.competitors || [],
                                 isActive: true,
                             }
                         });
                         console.log(`✅ Created campaign ${campaignId} in Prisma`);
-                    } catch (campaignError: any) {
-                        console.error(`❌ Failed to create campaign:`, campaignError);
-                        // Continue anyway - might already exist
+                        campaignExists = true;
+                    } else {
+                        console.log(`✅ Campaign ${campaignId} exists in Prisma`);
+                        campaignExists = true;
+                        
+                        // Update campaign userId if mismatch
+                        if (existingCampaign.userId !== userId) {
+                            await prisma.campaign.update({
+                                where: { id: campaignId },
+                                data: { userId: userId }
+                            });
+                            console.log(`✅ Updated campaign userId to ${userId}`);
+                        }
                     }
-                } else if (campaign.userId !== userId) {
-                    // Update campaign userId if mismatch
-                    try {
-                        await prisma.campaign.update({
-                            where: { id: campaignId },
-                            data: { userId: userId }
-                        });
-                        console.log(`✅ Updated campaign userId to ${userId}`);
-                    } catch (updateError: any) {
-                        console.warn(`⚠️ Failed to update campaign userId:`, updateError.message);
+                } catch (campaignError: any) {
+                    console.error(`❌ Failed to ensure campaign exists:`, campaignError);
+                    // This is critical - if campaign doesn't exist, leads can't be saved
+                    throw new Error(`Campaign ${campaignId} must exist in database before saving leads: ${campaignError.message}`);
+                }
+                
+                // Verify campaign exists before proceeding - CRITICAL CHECK
+                if (!campaignExists) {
+                    const doubleCheck = await prisma.campaign.findUnique({
+                        where: { id: campaignId }
+                    });
+                    if (!doubleCheck) {
+                        console.error(`❌ CRITICAL: Campaign ${campaignId} does not exist in database!`);
+                        throw new Error(`Campaign ${campaignId} must exist in database before saving leads. Creation failed.`);
                     }
+                    campaignExists = true;
+                    console.log(`✅ Campaign ${campaignId} verified to exist (double-check passed)`);
+                } else {
+                    console.log(`✅ Campaign ${campaignId} verified to exist before saving leads`);
                 }
                 
                 // Use Prisma to save leads (upsert to avoid duplicates)
@@ -618,11 +642,23 @@ export async function POST(
                         }
                         savedCount++;
                     } catch (error: any) {
-                        // Skip duplicates or other errors
+                        // Handle different error types
                         if (error.code === 'P2002') {
                             skippedCount++; // Duplicate
+                        } else if (error.code === 'P2003') {
+                            // Foreign key constraint violation - campaign or user doesn't exist
+                            console.error(`❌ Foreign key error saving lead ${lead.redditId}:`, error.message);
+                            console.error(`   Campaign ID: ${campaignId}, User ID: ${userId}`);
+                            // Verify campaign exists
+                            const campaignCheck = await prisma.campaign.findUnique({
+                                where: { id: campaignId }
+                            });
+                            console.error(`   Campaign exists: ${!!campaignCheck}`);
+                            // Don't skip - this is a critical error
+                            throw new Error(`Foreign key constraint failed: Campaign or User doesn't exist. Campaign: ${!!campaignCheck}, CampaignId: ${campaignId}, UserId: ${userId}`);
                         } else {
-                            console.error(`Error saving lead ${lead.redditId}:`, error);
+                            console.error(`❌ Error saving lead ${lead.redditId}:`, error);
+                            // For other errors, continue but log
                         }
                     }
                 }

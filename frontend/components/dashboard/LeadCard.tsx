@@ -40,6 +40,7 @@ const poppins = Poppins({
 // The Lead interface should include the isGoogleRanked property
 export interface Lead {
   id: string;
+  redditId?: string; // Reddit post ID for API calls
   title: string;
   author: string;
   subreddit: string;

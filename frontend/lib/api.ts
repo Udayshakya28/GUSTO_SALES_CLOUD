@@ -77,8 +77,22 @@ export const api = {
       dataType: Array.isArray(data) ? 'array' : typeof data,
       dataLength: Array.isArray(data) ? data.length : 'N/A',
       dataKeys: Array.isArray(data) ? 'N/A' : Object.keys(data),
-      sample: Array.isArray(data) ? data.slice(0, 2) : data
+      hasDataProperty: !!(data && typeof data === 'object' && 'data' in data),
+      dataPropertyType: data?.data ? (Array.isArray(data.data) ? 'array' : typeof data.data) : 'N/A',
+      dataPropertyLength: Array.isArray(data?.data) ? data.data.length : 'N/A',
+      sample: Array.isArray(data) ? data.slice(0, 2) : (data?.data && Array.isArray(data.data) ? data.data.slice(0, 2) : data)
     });
+    
+    // Return the data in the expected format
+    // API returns { data: leads[], debug: {...} }
+    if (data && typeof data === 'object' && 'data' in data) {
+      return { data: data.data, debug: data.debug };
+    }
+    // Fallback: if data is already an array
+    if (Array.isArray(data)) {
+      return { data };
+    }
+    // Fallback: return as-is
     return { data };
   },
 
@@ -443,11 +457,11 @@ export const api = {
     return response.json();
   },
 
-  postReply: async (leadId: string, content: string, token: string | null) => {
+  postReply: async (leadId: string, redditId: string | undefined, content: string, token: string | null) => {
     const response = await fetch(`${API_BASE_URL}/api/engagement/reply`, {
       method: 'POST',
       headers: getAuthHeaders(token),
-      body: JSON.stringify({ leadId, content }),
+      body: JSON.stringify({ leadId, redditId, content }),
     });
     if (!response.ok) {
       const errorData = await response.json();

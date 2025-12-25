@@ -133,39 +133,85 @@ export const DashboardLayout = () => {
         });
       }
       
-      // Handle both array and object responses
-      const rawLeads = Array.isArray(response.data) ? response.data : (response.data || response || []);
+      // Handle response structure
+      // API returns { data: leads[], debug: {...} }
+      // api.getLeads returns { data: leads[], debug: {...} }
+      let rawLeads: any[] = [];
+      
+      console.log('🔍 Parsing response:', {
+        responseType: typeof response,
+        responseKeys: Object.keys(response || {}),
+        dataType: typeof response.data,
+        dataIsArray: Array.isArray(response.data),
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+      });
+      
+      if (Array.isArray(response.data)) {
+        rawLeads = response.data;
+        console.log('✅ response.data is an array with', rawLeads.length, 'leads');
+      } else if (response.data && typeof response.data === 'object') {
+        // Check nested structure
+        if (Array.isArray(response.data.data)) {
+          rawLeads = response.data.data;
+          console.log('✅ Found leads in response.data.data:', rawLeads.length);
+        } else if (Array.isArray(response.data.leads)) {
+          rawLeads = response.data.leads;
+          console.log('✅ Found leads in response.data.leads:', rawLeads.length);
+        } else {
+          console.error('❌ response.data is not an array and has no leads/data property:', {
+            type: typeof response.data,
+            keys: Object.keys(response.data || {}),
+            sample: JSON.stringify(response.data).substring(0, 200)
+          });
+        }
+      } else {
+        console.error('❌ Unexpected response structure:', {
+          responseType: typeof response,
+          responseKeys: Object.keys(response || {}),
+          responseSample: JSON.stringify(response).substring(0, 200)
+        });
+      }
       
       console.log('📋 After extracting rawLeads:', {
         isArray: Array.isArray(rawLeads),
-        length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',
-        firstLead: Array.isArray(rawLeads) && rawLeads.length > 0 ? rawLeads[0] : null
-      });
-      console.log('📋 Raw leads:', {
-        isArray: Array.isArray(rawLeads),
-        length: Array.isArray(rawLeads) ? rawLeads.length : 'N/A',
-        sample: Array.isArray(rawLeads) ? rawLeads.slice(0, 2) : rawLeads
+        length: rawLeads.length,
+        firstLead: rawLeads.length > 0 ? {
+          id: rawLeads[0].id,
+          title: rawLeads[0].title?.substring(0, 30),
+          status: rawLeads[0].status,
+          createdAt: rawLeads[0].createdAt
+        } : null
       });
       
-      const leadsData: Lead[] = (Array.isArray(rawLeads) ? rawLeads : []).map((lead: any) => {
-        console.log('🔄 Mapping lead:', { id: lead.id, title: lead.title?.substring(0, 30) });
+      if (rawLeads.length === 0) {
+        console.error('❌ No leads extracted from response!');
+        console.error('Full response:', JSON.stringify(response, null, 2));
+      }
+      
+      const leadsData: Lead[] = rawLeads.map((lead: any) => {
+        if (!lead) {
+          console.warn('⚠️ Null lead found in array');
+          return null;
+        }
+        
         return {
           id: lead.id,
-          title: lead.title,
-          author: lead.author,
-          subreddit: lead.subreddit,
-          url: lead.url,
-          body: lead.body,
-          createdAt: lead.createdAt,
-          intent: lead.intent,
-          summary: lead.summary,
-          opportunityScore: lead.opportunityScore,
+          redditId: lead.redditId, // Include redditId for reply functionality
+          title: lead.title || '',
+          author: lead.author || '',
+          subreddit: lead.subreddit || '',
+          url: lead.url || '',
+          body: lead.body || '',
+          createdAt: lead.createdAt || lead.discoveredAt || Math.floor(Date.now() / 1000),
+          intent: lead.intent || 'unclassified',
+          summary: lead.summary || null,
+          opportunityScore: lead.opportunityScore || 0,
           status: lead.status || 'new',
-          numComments: lead.numComments,
-          upvoteRatio: lead.upvoteRatio,
+          numComments: lead.numComments || 0,
+          upvoteRatio: lead.upvoteRatio || 0,
           isGoogleRanked: lead.isGoogleRanked ?? false,
         };
-      });
+      }).filter((lead): lead is Lead => lead !== null);
       
       console.log('✅ Leads mapped:', {
         total: leadsData.length,
