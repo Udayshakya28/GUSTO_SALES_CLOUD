@@ -13,7 +13,7 @@
     "@clerk/nextjs": "^6.25.3",
     "@clerk/themes": "^2.4.2",
     "@heroicons/react": "^2.2.0",
-    "@prisma/client": "^7.2.0",
+    "@prisma/client": "^6.19.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -61,7 +61,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.178.1",
-    "prisma": "^7.2.0",
+    "prisma": "^6.19.1",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
