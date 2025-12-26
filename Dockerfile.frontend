@@ -1,0 +1,62 @@
+FROM node:18-alpine AS base
+# Install libc6-compat and openssl for Prisma on Alpine
+RUN apk add --no-cache libc6-compat openssl
+
+# Install dependencies only when needed
+FROM base AS deps
+WORKDIR /app
+
+# Copy package files from frontend
+COPY frontend/package.json frontend/package-lock.json* ./frontend/
+# We also need to copy prisma 
+COPY prisma ./prisma
+
+WORKDIR /app/frontend
+RUN npm ci
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
+COPY frontend ./frontend
+COPY prisma ./prisma
+
+WORKDIR /app/frontend
+
+# Pass build args to env (syntax key=value recommendation)
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build the project
+RUN npm run build
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy public folder (adjust path if needed, usually /app/frontend/public)
+COPY --from=builder /app/frontend/public ./public
+
+# Set permission for .next
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Copy standalone build
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+
+CMD ["node", "frontend/server.js"]

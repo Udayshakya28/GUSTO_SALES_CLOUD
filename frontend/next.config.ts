@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  // Removed 'output: "standalone"' - this is for Docker deployments
-  // Vercel handles the build output automatically
-  
+  // Configure images to allow high quality
+  images: {
+    qualities: [25, 50, 75, 80, 90, 100],
+  },
+
   webpack: (config, { isServer }) => {
     // Suppress warnings for optional dependencies in snoowrap/ws
     // These are optional performance enhancements, not required
@@ -13,7 +16,7 @@ const nextConfig: NextConfig = {
       bufferutil: false,
       'utf-8-validate': false,
     };
-    
+
     // Ignore warnings for optional dependencies
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
@@ -22,7 +25,7 @@ const nextConfig: NextConfig = {
       { message: /Can't resolve 'bufferutil'/ },
       { message: /Can't resolve 'utf-8-validate'/ },
     ];
-    
+
     return config;
   },
 };
