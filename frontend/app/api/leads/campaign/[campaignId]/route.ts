@@ -15,15 +15,15 @@ export async function GET(
         if (!campaignId) {
             return NextResponse.json({ error: 'Campaign ID is required' }, { status: 400 });
         }
-        
+
         // Get user ID from Clerk
         const { userId } = await auth();
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        
+
         console.log(`📥 Fetching leads for campaign: ${campaignId}, user: ${userId}`);
-        
+
         // Debug: Log Prisma availability
         console.log('🔍 Prisma Fetch Diagnostics:', {
             isPrismaAvailable: isPrismaAvailable(),
@@ -31,15 +31,15 @@ export async function GET(
             databaseUrlSet: !!process.env.DATABASE_URL,
             databaseUrlPreview: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET'
         });
-        
+
         let leads = [];
         let source = 'in-memory';
-        
+
         // Try Prisma first if available and DATABASE_URL is set
         if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             try {
                 console.log('🔍 Attempting to fetch leads from Prisma database...');
-                
+
                 // Test connection first
                 try {
                     await prisma.$connect();
@@ -48,13 +48,13 @@ export async function GET(
                     console.error('❌ Prisma connection failed:', connError.message);
                     throw connError;
                 }
-                
+
                 // First, check if campaign exists and get all leads for it
                 const campaign = await prisma.campaign.findUnique({
                     where: { id: campaignId },
                     include: { leads: true }
                 });
-                
+
                 console.log(`🔍 Campaign check:`, {
                     campaignExists: !!campaign,
                     campaignUserId: campaign?.userId,
@@ -63,24 +63,24 @@ export async function GET(
                     totalLeadsInCampaign: campaign?.leads.length || 0,
                     campaignName: campaign?.name
                 });
-                
+
                 // Get total counts for debugging
                 const totalLeadsInCampaign = await prisma.lead.count({
                     where: { campaignId: campaignId }
                 });
                 const leadsWithUserId = await prisma.lead.count({
-                    where: { 
+                    where: {
                         campaignId: campaignId,
                         userId: userId
                     }
                 });
                 const leadsWithOtherUserId = await prisma.lead.count({
-                    where: { 
+                    where: {
                         campaignId: campaignId,
                         userId: { not: userId }
                     }
                 });
-                
+
                 console.log(`📊 Lead counts breakdown:`, {
                     totalInCampaign: totalLeadsInCampaign,
                     withCurrentUserId: leadsWithUserId,
@@ -88,18 +88,22 @@ export async function GET(
                     campaignId,
                     currentUserId: userId
                 });
-                
+
                 // TEMPORARY: Fetch ALL leads for campaign regardless of userId (for debugging)
                 // This helps us see if leads exist but have wrong userId
+                // User Request: Sort by opportunityScore descending
                 const allCampaignLeads = await prisma.lead.findMany({
-                    where: { 
+                    where: {
                         campaignId: campaignId
                     },
-                    orderBy: { discoveredAt: 'desc' }
+                    orderBy: [
+                        { opportunityScore: 'desc' },
+                        { discoveredAt: 'desc' }
+                    ]
                 });
-                
+
                 console.log(`📊 Total leads in campaign (all userIds): ${allCampaignLeads.length}`);
-                
+
                 // Check userId distribution
                 const userIdCounts: Record<string, number> = {};
                 allCampaignLeads.forEach((lead: any) => {
@@ -107,21 +111,21 @@ export async function GET(
                 });
                 console.log(`📊 Lead userId distribution:`, userIdCounts);
                 console.log(`📊 Current userId: ${userId}`);
-                
+
                 // Log sample leads
                 if (allCampaignLeads.length > 0) {
-                    console.log(`🔍 Sample leads:`, allCampaignLeads.slice(0, 3).map((l: any) => ({ 
-                        id: l.id, 
+                    console.log(`🔍 Sample leads:`, allCampaignLeads.slice(0, 3).map((l: any) => ({
+                        id: l.id,
                         redditId: l.redditId,
                         userId: l.userId,
                         title: l.title?.substring(0, 30),
                         campaignId: l.campaignId
                     })));
                 }
-                
+
                 // Use all leads for now (temporary fix)
                 let prismaLeads = allCampaignLeads;
-                
+
                 // If campaign exists but userId doesn't match, update it
                 if (campaign && campaign.userId !== userId && allCampaignLeads.length > 0) {
                     console.warn(`⚠️ Campaign userId mismatch (${campaign.userId} vs ${userId}), updating campaign...`);
@@ -131,12 +135,12 @@ export async function GET(
                             data: { userId: userId }
                         });
                         console.log(`✅ Updated campaign userId to ${userId}`);
-                        
+
                         // Also update all leads to have correct userId
                         if (allCampaignLeads.some((l: any) => l.userId !== userId)) {
                             console.log(`🔄 Updating leads userId to ${userId}...`);
                             await prisma.lead.updateMany({
-                                where: { 
+                                where: {
                                     campaignId: campaignId,
                                     userId: { not: userId }
                                 },
@@ -148,9 +152,9 @@ export async function GET(
                         console.error(`❌ Failed to update campaign/leads userId:`, updateError);
                     }
                 }
-                
+
                 console.log(`✅ Using ${prismaLeads.length} leads for campaign ${campaignId}`);
-                
+
                 // Convert Prisma leads to API format
                 leads = prismaLeads.map((lead: any) => ({
                     id: lead.id,
@@ -170,7 +174,7 @@ export async function GET(
                     upvoteRatio: 0, // Not stored in Prisma, will need to add if needed
                     isGoogleRanked: lead.isGoogleRanked || false
                 }));
-                
+
                 source = 'prisma';
                 console.log(`📊 Found ${leads.length} leads in Prisma database for campaign ${campaignId}`);
                 console.log(`📋 Sample converted leads:`, leads.slice(0, 3).map((l: any) => ({
@@ -196,13 +200,13 @@ export async function GET(
                 databaseUrlSet: !!process.env.DATABASE_URL
             });
         }
-        
+
         // Fallback to in-memory database if Prisma failed or not available
         if (source === 'in-memory') {
             leads = db.getLeads(campaignId);
             console.log(`📊 Found ${leads.length} leads in in-memory database for campaign ${campaignId}`);
         }
-        
+
         // Enhanced debug info
         const debugInfo: any = {
             campaignId,
@@ -212,7 +216,7 @@ export async function GET(
             prismaAvailable: isPrismaAvailable(),
             databaseUrlSet: !!process.env.DATABASE_URL
         };
-        
+
         // Add Prisma-specific debug info if used
         if (source === 'prisma' && isPrismaAvailable() && prisma) {
             try {
@@ -220,7 +224,7 @@ export async function GET(
                     where: { campaignId: campaignId }
                 });
                 const leadsWithUserId = await prisma.lead.count({
-                    where: { 
+                    where: {
                         campaignId: campaignId,
                         userId: userId
                     }
@@ -229,7 +233,7 @@ export async function GET(
                     where: { id: campaignId },
                     select: { id: true, userId: true, name: true }
                 });
-                
+
                 debugInfo.prisma = {
                     totalLeadsInCampaign,
                     leadsWithUserId,
@@ -242,10 +246,10 @@ export async function GET(
                 debugInfo.prismaError = e.message;
             }
         }
-        
+
         console.log(`📤 Returning response with debug info:`, debugInfo);
-        
-        return NextResponse.json({ 
+
+        return NextResponse.json({
             data: leads,
             debug: debugInfo
         });
