@@ -61,9 +61,15 @@ export async function POST(request: Request) {
 
                 // Also add to in-memory for immediate consistency if anything reads from there
                 db.addCampaign({
-                    ...campaignData,
-                    createdAt: campaignData.createdAt.toISOString(),
-                    updatedAt: campaignData.updatedAt.toISOString()
+                    id: campaignData.id,
+                    userId: campaignData.userId,
+                    name: campaignData.name,
+                    analyzedUrl: campaignData.analyzedUrl,
+                    generatedKeywords: campaignData.generatedKeywords,
+                    generatedDescription: campaignData.generatedDescription,
+                    targetSubreddits: campaignData.targetSubreddits,
+                    competitors: campaignData.competitors,
+                    createdAt: campaignData.createdAt.toISOString()
                 });
 
                 return NextResponse.json({
@@ -80,9 +86,15 @@ export async function POST(request: Request) {
         // Fallback to in-memory implementation
         console.warn('⚠️ using in-memory fallback for onboarding campaign creation');
         const memoryCampaign = {
-            ...campaignData,
-            createdAt: campaignData.createdAt.toISOString(),
-            updatedAt: campaignData.updatedAt.toISOString()
+            id: campaignData.id,
+            userId: campaignData.userId,
+            name: campaignData.name,
+            analyzedUrl: campaignData.analyzedUrl,
+            generatedKeywords: campaignData.generatedKeywords,
+            generatedDescription: campaignData.generatedDescription,
+            targetSubreddits: campaignData.targetSubreddits,
+            competitors: campaignData.competitors,
+            createdAt: campaignData.createdAt.toISOString()
         };
         db.addCampaign(memoryCampaign);
         return NextResponse.json(memoryCampaign);
