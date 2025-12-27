@@ -1,0 +1,4 @@
+praw
+textblob
+psycopg2-binary # For connecting to a PostgreSQL database
+Flask
