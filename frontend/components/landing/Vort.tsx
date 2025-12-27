@@ -18,11 +18,11 @@ export function Vort() {
       containerClassName="relative h-96 lg:h-[500px]" // Override the default h-screen
 
       colors={[
-        "#FF4500", // Primary orange
-        "#FF6B00", // Secondary orange
-        "#FF8C00", // Light orange
-        "#FF2500", // Red-orange
-        "#FF7A00", // Mid orange
+        "#11DFFF", // Primary cyan
+        "#11DFFF", // Secondary cyan
+        "#0dcddd", // Light cyan
+        "#0ab8c8", // Bright cyan
+        "#08a3b3", // Mid cyan
       ]}
       waveWidth={40}
       backgroundFill="rgb(0, 0, 0)" // Changed from gray-900 to black
@@ -40,7 +40,7 @@ export function Vort() {
           {/* Main CTA Headline */}
           <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight ${poppins.className}`}>
             What Are You{" "}
-            <span className="bg-gradient-to-r from-[#FF4500] to-[#FF6B00] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#11DFFF] to-[#11DFFF] bg-clip-text text-transparent">
               Waiting For?
             </span>
           </h2>
@@ -55,7 +55,7 @@ export function Vort() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-[#FF4500] to-[#FF6B00] text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              className="bg-gradient-to-r from-[#11DFFF] to-[#11DFFF] text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />

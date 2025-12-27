@@ -137,7 +137,7 @@ export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) 
               href={`https://reddit.com/u/${redditUsername}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ff4500] hover:text-[#ff6b35] transition-colors"
+              className="text-[#11DFFF] hover:text-[#0dcddd] transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -195,7 +195,7 @@ export const RedditConnection = ({ onConnectionChange }: RedditConnectionProps) 
           <button
             onClick={fetchStatus}
             disabled={isRefreshing}
-            className="w-full px-4 py-2 bg-[#ff4500] text-white rounded-lg hover:bg-[#ff5722] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-[#11DFFF] text-white rounded-lg hover:bg-[#0dcddd] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isRefreshing ? (
               <>

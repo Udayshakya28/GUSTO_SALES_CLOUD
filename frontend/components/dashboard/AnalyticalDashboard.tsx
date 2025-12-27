@@ -137,7 +137,7 @@ export const AnalyticalDashboard = ({ campaigns, activeCampaign, leadStats, allL
         let transformedSubredditData = [];
         
         if (performanceResponse.data && Array.isArray(performanceResponse.data)) {
-          const palette = ['#ff4500', '#ff6a00', '#ff8c00', '#ffa500', '#ffb347', '#ffc266', '#ffd285', '#ffe4a3'];
+          const palette = ['#11DFFF', '#11DFFF', '#0dcddd', '#0ab8c8', '#08a3b3', '#068e9e', '#047989', '#026474'];
           
           transformedSubredditData = performanceResponse.data.map((item: any, idx: number) => {
             console.log('🔧 Processing item:', item);
@@ -175,11 +175,11 @@ export const AnalyticalDashboard = ({ campaigns, activeCampaign, leadStats, allL
             opportunityDescription: "No data available",
             opportunityTrend: "steady"
           },
-          // 🎨 UPDATED: Orange tinted pie chart colors
+          // 🎨 UPDATED: Cyan tinted pie chart colors
           opportunityDistribution: opportunityResponse.data || [
-            { name: 'High', value: 0, color: '#ff4500' },    // Bright Reddit orange
-            { name: 'Medium', value: 0, color: '#ff6a00' },  // Medium orange
-            { name: 'Low', value: 0, color: '#cc3700' }      // Darker orange
+            { name: 'High', value: 0, color: '#11FEFF' },    // Bright cyan
+            { name: 'Medium', value: 0, color: '#11FEFF' },  // Medium cyan
+            { name: 'Low', value: 0, color: '#0dcddd' }      // Darker cyan
           ],
           weeklyActivity: activityResponse.data || []
         });
@@ -203,11 +203,11 @@ export const AnalyticalDashboard = ({ campaigns, activeCampaign, leadStats, allL
             opportunityDescription: "Unable to load data",
             opportunityTrend: "steady"
           },
-          // 🎨 UPDATED: Orange tinted fallback colors
+          // 🎨 UPDATED: Cyan tinted fallback colors
           opportunityDistribution: [
-            { name: 'High', value: 0, color: '#ff4500' },    // Bright Reddit orange
-            { name: 'Medium', value: 0, color: '#ff6a00' },  // Medium orange
-            { name: 'Low', value: 0, color: '#cc3700' }      // Darker orange
+            { name: 'High', value: 0, color: '#11FEFF' },    // Bright cyan
+            { name: 'Medium', value: 0, color: '#11FEFF' },  // Medium cyan
+            { name: 'Low', value: 0, color: '#0dcddd' }      // Darker cyan
           ],
           weeklyActivity: []
         });
@@ -673,7 +673,7 @@ export const AnalyticalDashboard = ({ campaigns, activeCampaign, leadStats, allL
                           color: '#ffffff'
                         }}
                       />
-                      <Bar dataKey="activity" fill="#ff6a00" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="activity" fill="#11DFFF" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (

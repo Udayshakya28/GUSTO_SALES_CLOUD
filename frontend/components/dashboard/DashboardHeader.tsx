@@ -18,8 +18,8 @@ export const RedLeadHeader = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className={`text-3xl font-bold tracking-tight text-white ${poppins.className}`}>
-              red<span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">lead</span>
+            <h1 className={`text-3xl font-bold tracking-tight ${poppins.className}`} style={{ color: '#11DFFF' }}>
+              Gusto Sales Cloud
             </h1>
           </motion.div>
         </div>

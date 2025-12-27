@@ -6,6 +6,7 @@ import { FaReddit } from "react-icons/fa";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { AnimatedBackground } from "./AnimatedBackground";
 
 const inter = Inter({ subsets: ['latin'] });
 const poppins = Poppins({
@@ -35,17 +36,22 @@ export const Hero = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black" style={{
+    <div className="min-h-screen bg-black relative overflow-hidden" style={{
       WebkitOverflowScrolling: 'touch',
       scrollBehavior: 'smooth',
       transform: 'translateZ(0)',
       willChange: 'scroll-position'
     }}>
 
+      {/* Animated Background with moving particles */}
+      <AnimatedBackground />
+
       {/* Background Effects */}
-      <div className="absolute inset-0 z-5">
-        <div className="absolute inset-0 bg-black"></div>
-        {/* ... rest of your background effects ... */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-black/40"></div>
+        {/* Optional: Add blurred gradient circles */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl" />
       </div>
 
       {/* Main Content */}
@@ -55,13 +61,11 @@ export const Hero = () => {
       }}>
 
         {/* Hero Section */}
-        <div className="relative rounded-2xl overflow-hidden mx-auto max-w-[98vw]">
-          <div className="absolute inset-0">
-            <div className="w-full h-full bg-black"></div>
-          </div>
+        <div className="relative rounded-2xl overflow-visible mx-auto max-w-[98vw]">
+          {/* Removed solid background to let bubbles show through */}
 
           {/* Main Hero Content */}
-          <div className="relative z-10 px-16 pt-20 pb-12 text-center max-md:px-8 max-md:pt-16 max-md:pb-8">
+          <div className="relative px-16 pt-20 pb-12 text-center max-md:px-8 max-md:pt-16 max-md:pb-8">
 
             {/* Tagline and Buttons */}
             <div className="overflow-visible mb-8">
@@ -70,41 +74,32 @@ export const Hero = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-[0.9] text-white mb-0 overflow-visible ${poppins.className}`}
+                className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter leading-[1.05] text-white mb-0 overflow-visible ${poppins.className}`}
                 style={{ overflow: 'visible' }}
               >
-                Turn{" "}
-                <motion.span
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.5, ease: "backOut" }}
-                  className="inline-block relative z-20 overflow-visible"
-                  style={{ overflow: 'visible', display: 'inline-block' }}
-                >
-                  <FaReddit className="inline size-8 sm:size-10 lg:size-12 xl:size-14 text-orange-500 mx-2 relative z-20" />
-                </motion.span>
-                <motion.span
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.8, delay: 0.7 }}
-                  className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent inline-block overflow-visible"
-                  style={{
-                    overflow: 'visible',
-                    lineHeight: '0.9',
-                    display: 'inline-block'
-                  }}
-                >
-                  Reddit{"     "}
-                </motion.span>
-                {" "}
                 <motion.span
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                  className="inline-block"
-                  style={{ overflow: 'visible' }}
+                  className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent block overflow-visible"
+                  style={{
+                    overflow: 'visible',
+                    lineHeight: '1.1'
+                  }}
                 >
-                  into leads
+                  AI that turns social signals
+                </motion.span>
+                <motion.span
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
+                  className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent block overflow-visible"
+                  style={{
+                    overflow: 'visible',
+                    lineHeight: '1.1'
+                  }}
+                >
+                  into real customers
                 </motion.span>
               </motion.h1>
             </div>
@@ -119,7 +114,7 @@ export const Hero = () => {
                 onClick={handleGetStartedClick}
                 className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-lg text-base font-semibold hover:bg-gray-100 transition-colors"
               >
-                <FaReddit className="w-4 h-4 text-orange-500" />
+                <FaReddit className="w-4 h-4 text-cyan-400" />
                 <span className={`${inter.className} font-semibold`}>Get started for free</span>
               </button>
               <button
@@ -139,7 +134,7 @@ export const Hero = () => {
               Already have Reddit leads?{" "}
               <Link
                 href="/dashboard"
-                className="text-orange-400 hover:text-orange-300 underline transition-colors"
+                className="text-cyan-400 hover:text-cyan-300 underline transition-colors"
               >
                 Open dashboard
               </Link>
@@ -154,25 +149,25 @@ export const Hero = () => {
             >
               <div className="relative">
                 {/* Static Glow Layers */}
-                <div className="absolute -inset-2 bg-transparent rounded-3xl [background:conic-gradient(from_90deg_at_50%_50%,#fb923c_0%,#f97316_50%,#ea580c_100%)] blur-lg" />
+                <div className="absolute -inset-2 bg-transparent rounded-3xl [background:conic-gradient(from_90deg_at_50%_50%,#11DFFF_0%,#0ea5e9_50%,#0284c7_100%)] blur-lg" />
                 
                 {/* Animated Breathing Glow Layers */}
                 <motion.div
                   animate={{ opacity: [0.3, 0.8, 0.3] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -inset-4 bg-orange-400/40 blur-2xl rounded-full"
+                  className="absolute -inset-4 bg-cyan-400/40 blur-2xl rounded-full"
                 />
                 <motion.div
                   animate={{ opacity: [0.5, 0.2, 0.5] }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute -inset-8 bg-orange-500/30 blur-3xl rounded-full"
+                  className="absolute -inset-8 bg-cyan-500/30 blur-3xl rounded-full"
                 />
 
                 {/* Image Container */}
-                <div className="relative overflow-hidden rounded-xl shadow-2xl shadow-orange-500/20 z-10 border border-white/10">
+                <div className="relative overflow-hidden rounded-xl shadow-2xl shadow-cyan-500/20 z-10 border border-white/10">
                   <Image
-                    src="/Redlead1.png"
-                    alt="RedLead Dashboard Interface"
+                    src="/Dashboard.png"
+                    alt="Gusto Sales Cloud Dashboard Interface"
                     width={5040}
                     height={3360}
                     quality={100}

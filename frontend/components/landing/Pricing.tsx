@@ -60,7 +60,7 @@ const PricingComponent: React.FC = () => {
   const plans: PricingPlan[] = [
     {
       name: "Free",
-      description: "Perfect for trying out Redlead",
+      description: "Perfect for trying out Gusto Sales Cloud",
       monthlyPrice: 0,
       yearlyPrice: 0,
       icon: Gift,
@@ -187,7 +187,7 @@ const PricingComponent: React.FC = () => {
           {/* Header */}
           <motion.div variants={itemVariants} className="text-center">
             <h2 className={`text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight ${poppins.className}`}>
-              Simple, Transparent <span className="text-orange-500">Pricing</span>
+              Simple, Transparent <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">Pricing</span>
             </h2>
             <p className={`text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed ${inter.className}`}>
               Choose the perfect plan to supercharge your Reddit lead generation
@@ -230,7 +230,7 @@ const PricingComponent: React.FC = () => {
                   variants={itemVariants}
                   className={`relative h-full rounded-2xl border transition-all duration-300 hover:shadow-xl ${
                     plan.popular
-                      ? 'border-orange-400/50 bg-gradient-to-br from-orange-600/20 via-orange-500/15 via-orange-400/10 to-orange-300/5 shadow-orange-500/30 backdrop-blur-sm'
+                      ? 'border-cyan-400/50 bg-gradient-to-br from-cyan-600/20 via-cyan-500/15 via-cyan-400/10 to-cyan-300/5 shadow-cyan-500/30 backdrop-blur-sm'
                       : 'border-gray-700 bg-gray-900/30 hover:border-gray-600 backdrop-blur-sm'
                   }`}
                 >
@@ -280,7 +280,7 @@ const PricingComponent: React.FC = () => {
                            whileTap={{ scale: 0.98 }}
                            className={`w-full rounded-lg py-3 px-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
                             plan.popular
-                              ? 'bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 text-white hover:from-orange-700 hover:via-orange-600 hover:to-orange-500 shadow-lg shadow-orange-500/25'
+                              ? 'bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-400 text-white hover:from-cyan-700 hover:via-cyan-600 hover:to-cyan-500 shadow-lg shadow-cyan-500/25'
                               : plan.name === 'Free'
                               ? 'bg-white text-gray-900 hover:bg-gray-100 shadow-sm'
                               : 'bg-gray-800 text-white border border-gray-600 hover:border-gray-500 hover:bg-gray-700'

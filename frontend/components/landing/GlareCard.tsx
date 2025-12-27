@@ -23,7 +23,7 @@ export const GlareCard: React.FC<GlareCardProps> = ({ children, className, onCli
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-gray-900/80 backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-300 hover:border-orange-400/30",
+        "relative overflow-hidden bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-gray-900/80 backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-300 hover:border-cyan-400/30",
         className
       )}
       onMouseMove={handleMouseMove}
@@ -57,7 +57,7 @@ export const GlareCard: React.FC<GlareCardProps> = ({ children, className, onCli
       {/* Border glow effect */}
       <div className={cn(
         "absolute inset-0 rounded-2xl transition-all duration-300",
-        isHovered && "shadow-lg shadow-orange-500/20"
+        isHovered && "shadow-lg shadow-cyan-500/20"
       )} />
       
       {/* Content */}

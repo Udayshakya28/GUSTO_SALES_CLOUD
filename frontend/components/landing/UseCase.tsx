@@ -127,10 +127,10 @@ export const UseCases = () => {
           className="text-center mb-16"
         >
           <h2 className={`${poppins.className} text-4xl md:text-5xl font-black tracking-tighter text-white mb-4`}>
-            How RedLead Powers Your Growth
+            How Gusto Sales Cloud Powers Your Growth
           </h2>
           <p className={`${inter.className} text-lg text-white/70 max-w-2xl mx-auto`}>
-            Discover how businesses use RedLead's AI-powered Reddit lead generation across different use cases.
+            Discover how businesses use Gusto Sales Cloud's AI-powered Reddit lead generation across different use cases.
           </p>
         </motion.div>
 

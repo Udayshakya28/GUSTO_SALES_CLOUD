@@ -9,12 +9,25 @@ module.exports = {
     theme: {
       extend: {
         colors: {
+          // Override Tailwind's default orange with cyan
+          orange: {
+            50: '#e6fffe',
+            100: '#ccfffe',
+            200: '#99fffd',
+            300: '#66fffc',
+            400: '#33fffb',
+            500: '#11DFFF',
+            600: '#0ecbcc',
+            700: '#0a9899',
+            800: '#076566',
+            900: '#033233',
+          },
           // Reddit-inspired color palette
           reddit: {
-            orange: '#ff4500',
-            'orange-light': '#ff6a00',
-            'orange-dark': '#cc3600',
-            'red-light': '#ff6b35',
+            orange: '#11DFFF',
+            'orange-light': '#11DFFF',
+            'orange-dark': '#0dcddd',
+            'red-light': '#11DFFF',
             background: {
               light: '#ffffff',
               dark: '#1a1a1b',
@@ -34,7 +47,7 @@ module.exports = {
           },
           // Override default colors for consistency
           primary: {
-            DEFAULT: '#ff4500',
+            DEFAULT: '#11DFFF',
             foreground: '#ffffff',
           },
           background: 'hsl(var(--background))',
@@ -46,8 +59,8 @@ module.exports = {
           border: 'hsl(var(--border))',
         },
         backgroundImage: {
-          'reddit-gradient': 'linear-gradient(135deg, #ff4500 0%, #ff6a00 100%)',
-          'reddit-gradient-reverse': 'linear-gradient(135deg, #ff6a00 0%, #ff4500 100%)',
+          'reddit-gradient': 'linear-gradient(135deg, #11DFFF 0%, #11DFFF 100%)',
+          'reddit-gradient-reverse': 'linear-gradient(135deg, #11DFFF 0%, #11DFFF 100%)',
         },
         boxShadow: {
           'reddit': '0 2px 8px rgba(255, 69, 0, 0.06)',
@@ -89,13 +102,13 @@ module.exports = {
             borderColor: '#343536',
           },
           '.reddit-button': {
-            background: 'linear-gradient(135deg, #ff4500 0%, #ff6a00 100%)',
+            background: 'linear-gradient(135deg, #11DFFF 0%, #11DFFF 100%)',
             color: '#ffffff',
             border: 'none',
             transition: 'all 0.2s ease',
           },
           '.reddit-button:hover': {
-            background: 'linear-gradient(135deg, #cc3600 0%, #e55a00 100%)',
+            background: 'linear-gradient(135deg, #0dcddd 0%, #0dcddd 100%)',
             transform: 'translateY(-1px)',
           }
         })

@@ -87,11 +87,11 @@ const SimpleFooter: React.FC = () => {
       <div className="absolute inset-0 pointer-events-none z-5">
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           {/* Main spotlight */}
-          <div className="w-[800px] h-[800px] bg-gradient-radial from-orange-400/20 via-orange-300/10 to-transparent rounded-full blur-2xl"></div>
+          <div className="w-[800px] h-[800px] bg-gradient-radial from-cyan-400/20 via-cyan-300/10 to-transparent rounded-full blur-2xl"></div>
           {/* Inner glow */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-radial from-orange-300/30 via-orange-200/15 to-transparent rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-radial from-cyan-300/30 via-cyan-200/15 to-transparent rounded-full blur-xl"></div>
           {/* Core light */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-gradient-radial from-orange-200/40 to-transparent rounded-full blur-lg"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-gradient-radial from-cyan-200/40 to-transparent rounded-full blur-lg"></div>
         </div>
       </div>
 
@@ -108,10 +108,8 @@ const SimpleFooter: React.FC = () => {
             >
               <div className="flex items-center gap-3 mb-4">
               <img src="/logo.png" alt="Logo" className="h-10 " />
-                <span className={` text-2xl font-black text-white ${poppins.className}`}>
-
-                  red
-                  <span className={` text-2xl bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent  ${poppins.className}`}>lead</span>
+                <span className={` text-2xl font-black ${poppins.className}`} style={{ color: '#11DFFF' }}>
+                  Gusto Sales Cloud
                 </span>
  
               </div>
@@ -205,38 +203,6 @@ const SimpleFooter: React.FC = () => {
             </motion.div>
           </div>
         </div>
-
-        {/* Bottom Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between"
-        >
-          <p className={`text-white/60 text-sm ${inter.className}`}>
-            © {currentYear} Redlead. Built by  <Link href={"https://x.com/attharrva15"}>@attharrva15</Link>
-          </p>
-          
-          {/* Social Links */}
-          <div className="flex items-center gap-3 mt-4 sm:mt-0">
-            {socialLinks.map((social, index) => {
-              const IconComponent = social.icon;
-              return (
-                <motion.a
-                  key={index}
-                  href={social.href}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white/70 hover:text-orange-400 hover:bg-white/20 transition-all duration-300"
-                  aria-label={social.label}
-                >
-                  <IconComponent className="w-4 h-4" />
-                </motion.a>
-              );
-            })}
-          </div>
-        </motion.div>
       </div>
 
       {/* Minimal Floating Elements - From Hero */}
