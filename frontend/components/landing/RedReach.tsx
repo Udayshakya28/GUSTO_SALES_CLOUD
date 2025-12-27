@@ -183,7 +183,7 @@ export const AdvantageComponent: React.FC = () => {
               className={`text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight mb-6 ${poppins.className}`}
             >
               Why Choose{" "}
-              <span className="bg-gradient-to-r from-[#FF4500] to-[#FF6B00] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#11DFFF] to-[#11DFFF] bg-clip-text text-transparent">
                 Redlead
               </span>{" "}
               Over Others?
@@ -207,8 +207,8 @@ export const AdvantageComponent: React.FC = () => {
                   </th>
                   <th className={`text-center py-6 px-4 ${poppins.className}`}>
                     <div className="text-center">
-                      <div className="text-lg font-bold bg-gradient-to-r from-[#FF4500] to-[#FF6B00] bg-clip-text text-transparent">
-                        Redlead
+                      <div className="text-lg font-bold bg-gradient-to-r from-[#11DFFF] to-[#11DFFF] bg-clip-text text-transparent">
+                        Gusto Sales Cloud
                       </div>
                       <div className="text-xs text-orange-400 mt-1">Starting at $19</div>
                     </div>
@@ -266,7 +266,7 @@ export const AdvantageComponent: React.FC = () => {
             variants={itemVariants}
             className="text-center"
           >
-            <button className="bg-gradient-to-r from-[#FF4500] to-[#FF6B00] text-white px-12 py-4 rounded-2xl font-bold text-lg hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300">
+            <button className="bg-gradient-to-r from-[#11DFFF] to-[#11DFFF] text-white px-12 py-4 rounded-2xl font-bold text-lg hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300">
               Start Free Trial →
             </button>
             <p className={`text-white/60 text-sm mt-4 ${inter.className}`}>

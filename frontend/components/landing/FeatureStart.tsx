@@ -42,9 +42,9 @@ export function FeaturesStart() {
   return (
     <section id="features" className="relative py-32 px-8 bg-black overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/5" />
-      <div className="absolute top-1/4 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-orange-400/8 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-cyan-600/5" />
+      <div className="absolute top-1/4 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-cyan-400/8 rounded-full blur-3xl" />
 
       <div className="relative max-w-8xl mx-auto">
         {/* Section Header */}
@@ -55,12 +55,12 @@ export function FeaturesStart() {
           viewport={{ once: true }}
           className="text-center mb-24"
         >
-          <span className={`inline-block text-sm font-semibold tracking-wide uppercase text-orange-400 mb-4 ${inter.className}`}>
+          <span className={`inline-block text-sm font-semibold tracking-wide uppercase mb-4 ${inter.className}`} style={{ color: '#11DFFF' }}>
             Powerful Features
           </span>
           <h2 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter leading-[0.9] text-white ${poppins.className}`}>
             Turn Reddit into your <br />
-            <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">
               lead generation machine
             </span>
           </h2>
@@ -76,10 +76,10 @@ export function FeaturesStart() {
             className="w-full max-w-4xl text-center space-y-8"
           >
             <h3 className={`text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-[0.9] text-white ${poppins.className}`}>
-              Stop scrolling. Start <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">selling.</span>
+              Stop scrolling. Start <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">selling.</span>
             </h3>
             <p className={`text-base font-medium text-white/80 leading-relaxed max-w-3xl mx-auto ${inter.className}`}>
-              While you waste hours manually searching Reddit for prospects, RedLead works 24/7 to discover and organize high-intent leads who are actively asking for solutions like yours.
+              While you waste hours manually searching Reddit for prospects, Gusto Sales Cloud works 24/7 to discover and organize high-intent leads who are actively asking for solutions like yours.
             </p>
           </motion.div>
           <motion.div
@@ -90,7 +90,7 @@ export function FeaturesStart() {
             className="w-full max-w-6xl"
           >
             <div className="relative group">
-              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(251,146,60,0.15)] backdrop-blur-sm group-hover:shadow-[0_50px_150px_rgba(251,146,60,0.25)] transition-all duration-700">
+              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(17,223,255,0.15)] backdrop-blur-sm group-hover:shadow-[0_50px_150px_rgba(17,223,255,0.25)] transition-all duration-700">
                 <FeatureVideo src="/1.mp4" />
               </div>
             </div>
@@ -107,7 +107,7 @@ export function FeaturesStart() {
             className="w-full max-w-4xl text-center space-y-8"
           >
             <h3 className={`text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-[0.9] text-white ${poppins.className}`}>
-              Every reply feels <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">authentically human</span>
+              Every reply feels <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">authentically human</span>
             </h3>
             <p className={`text-base font-medium text-white/80 leading-relaxed max-w-3xl mx-auto ${inter.className}`}>
               Smart AI that understands context and community vibes to craft replies that actually help people—not spammy sales pitches that get you banned from every subreddit.
@@ -121,7 +121,7 @@ export function FeaturesStart() {
             className="w-full max-w-6xl"
           >
             <div className="relative group">
-              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(251,146,60,0.15)] group-hover:shadow-[0_50px_150px_rgba(251,146,60,0.25)] transition-all duration-700">
+              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(17,223,255,0.15)] group-hover:shadow-[0_50px_150px_rgba(17,223,255,0.25)] transition-all duration-700">
                 <FeatureVideo src="/4.mp4" />
               </div>
             </div>
@@ -138,7 +138,7 @@ export function FeaturesStart() {
             className="w-full max-w-4xl text-center space-y-8"
           >
             <h3 className={`text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tighter leading-[0.9] text-white ${poppins.className}`}>
-              Skip the noise. Get the <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">insights.</span>
+              Skip the noise. Get the <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">insights.</span>
             </h3>
             <p className={`text-base font-medium text-white/80 leading-relaxed max-w-3xl mx-auto ${inter.className}`}>
               No more scrolling through endless comment threads. Get instant summaries that highlight the pain points, buying signals, and opportunities you actually care about.
@@ -152,7 +152,7 @@ export function FeaturesStart() {
             className="w-full max-w-6xl"
           >
             <div className="relative group">
-              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(251,146,60,0.15)] group-hover:shadow-[0_50px_150px_rgba(251,146,60,0.25)] transition-all duration-700">
+              <div className="relative overflow-hidden rounded-3xl shadow-[0_35px_100px_rgba(17,223,255,0.15)] group-hover:shadow-[0_50px_150px_rgba(17,223,255,0.25)] transition-all duration-700">
                 <FeatureVideo src="/3.mp4" />
               </div>
             </div>

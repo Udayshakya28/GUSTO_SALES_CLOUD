@@ -75,7 +75,7 @@ export function HowToDo() {
         <header className="text-center mb-16">
           <h2 className={`text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4 ${poppins.className}`}>
             Get Started in{" "}
-            <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-cyan-500 bg-clip-text text-transparent">
               3 Simple Steps
             </span>
           </h2>
@@ -91,24 +91,24 @@ export function HowToDo() {
             
             return (
               <div key={index} className="h-full">
-                <div className="h-full bg-zinc-900/70 border border-zinc-800 rounded-xl p-8 hover:border-orange-500/50 hover:bg-zinc-900/90 transition-all duration-300 group backdrop-blur-sm">
+                <div className="h-full bg-zinc-900/70 border border-zinc-800 rounded-xl p-8 hover:border-cyan-500/50 hover:bg-zinc-900/90 transition-all duration-300 group backdrop-blur-sm">
                   {/* Step Number */}
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
                       <span className={`text-white text-sm font-bold ${poppins.className}`}>
                         {index + 1}
                       </span>
                     </div>
                     
                     {/* Icon */}
-                    <div className="w-12 h-12 bg-zinc-800/80 border border-zinc-700 rounded-lg flex items-center justify-center group-hover:bg-orange-500/10 group-hover:border-orange-500/30 transition-all duration-300">
-                      <IconComponent className="w-6 h-6 text-orange-400 group-hover:text-orange-300 transition-colors duration-300" />
+                    <div className="w-12 h-12 bg-zinc-800/80 border border-zinc-700 rounded-lg flex items-center justify-center group-hover:bg-cyan-500/10 group-hover:border-cyan-500/30 transition-all duration-300">
+                      <IconComponent className="w-6 h-6 text-cyan-400 group-hover:text-cyan-300 transition-colors duration-300" />
                     </div>
                   </div>
 
                   {/* Content */}
                   <div className="space-y-4 mb-6">
-                    <h3 className={`text-xl font-bold text-white group-hover:text-orange-50 transition-colors ${poppins.className}`}>
+                    <h3 className={`text-xl font-bold text-white group-hover:text-cyan-50 transition-colors ${poppins.className}`}>
                       <Link href={step.href} className="hover:underline">
                         {step.title}
                       </Link>
@@ -120,7 +120,7 @@ export function HowToDo() {
                   </div>
 
                   {/* Action */}
-                  <div className="flex items-center text-orange-400 group-hover:text-orange-300 transition-colors">
+                  <div className="flex items-center text-cyan-400 group-hover:text-cyan-300 transition-colors">
                     <Link href={step.href} className="flex items-center space-x-2 text-sm font-medium">
                       <span className={inter.className}>{step.action}</span>
                       <FaArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
@@ -140,7 +140,7 @@ export function HowToDo() {
               onClick={handleGetStartedClick}
               className="group inline-flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
             >
-              <FaReddit className="w-5 h-5 text-orange-500" />
+              <FaReddit className="w-5 h-5 text-cyan-500" />
               <span className={`${inter.className} font-semibold`}>Get started for free</span>
             </button>
 

@@ -107,11 +107,11 @@ const SuperchargeSparkles = ({ children }: { children: React.ReactNode }) => {
                 delay: 0.3,
                 ease: "easeInOut"
               }}
-              className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-orange-400 to-transparent"
+              className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
             />
           </div>
           
-          <div className="relative z-10 bg-gradient-to-r from-orange-400 via-orange-300 to-orange-400 bg-clip-text text-transparent">
+          <div className="relative z-10 bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-400 bg-clip-text text-transparent">
             {children}
           </div>
         </motion.div>

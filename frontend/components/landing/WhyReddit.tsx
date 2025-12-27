@@ -17,15 +17,15 @@ export function WhyReddit() {
     <>
       <section className="relative py-24 px-8 bg-black overflow-hidden">
         {/* Background decoration - matching hero/features */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-600/5" />
-        <div className="absolute top-1/4 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-orange-400/8 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-cyan-600/5" />
+        <div className="absolute top-1/4 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-cyan-400/8 rounded-full blur-3xl" />
 
         {/* Enhanced Spotlight Beam - matching hero */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="w-[600px] h-[600px] bg-gradient-radial from-orange-400/15 via-orange-300/8 to-transparent rounded-full blur-2xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gradient-radial from-orange-300/20 via-orange-200/10 to-transparent rounded-full blur-xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] bg-gradient-radial from-orange-200/25 to-transparent rounded-full blur-lg"></div>
+          <div className="w-[600px] h-[600px] bg-gradient-radial from-cyan-400/15 via-cyan-300/8 to-transparent rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gradient-radial from-cyan-300/20 via-cyan-200/10 to-transparent rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] bg-gradient-radial from-cyan-200/25 to-transparent rounded-full blur-lg"></div>
         </div>
 
         <div className="relative z-20 mx-auto max-w-7xl">
@@ -39,13 +39,13 @@ export function WhyReddit() {
               className="md:col-span-2 space-y-8"
             >
               {/* Small label - increased size */}
-              <span className={`inline-block text-sm font-semibold tracking-wide uppercase text-orange-400 mb-4 ${inter.className}`}>
+              <span className={`inline-block text-sm font-semibold tracking-wide uppercase text-cyan-400 mb-4 ${inter.className}`}>
                 The New Lead Gen Goldmine
               </span>
 
               {/* Main heading - significantly increased */}
               <h2 className={`text-3xl sm:text-4xl lg:text-5xl xl:text-5xl font-black tracking-tighter leading-[0.9] text-white ${poppins.className}`}>
-                Why <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">Reddit</span> Wins the AI Era
+                Why <span className="bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 bg-clip-text text-transparent">Reddit</span> Wins the AI Era
               </h2>
 
               {/* Body text - increased size */}
@@ -56,19 +56,19 @@ export function WhyReddit() {
               {/* Stats list - increased text and bullet size */}
               <div className="space-y-4 pt-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
                   <p className={`text-base font-medium text-white/80 ${inter.className}`}>
                     <span className="font-bold text-white">73%</span> of Google's first-page results feature Reddit threads
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
                   <p className={`text-base font-medium text-white/80 ${inter.className}`}>
                     <span className="font-bold text-white">90%</span> of users add 'reddit' to searches for trusted answers
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
                   <p className={`text-base font-medium text-white/80 ${inter.className}`}>
                     <span className="font-bold text-white">#1</span> source for solution-seeking AI queries and recommendations
                   </p>
@@ -96,13 +96,13 @@ export function WhyReddit() {
               onClick={() => setLightboxOpen(true)}
             >
               {/* Enhanced glowing border frame effect */}
-              <div className="absolute -inset-3 bg-gradient-to-r from-orange-500/50 via-orange-400/60 to-orange-500/50 rounded-xl blur-lg opacity-70 group-hover:opacity-90 transition-all duration-500"></div>
+              <div className="absolute -inset-3 bg-gradient-to-r from-cyan-500/50 via-cyan-400/60 to-cyan-500/50 rounded-xl blur-lg opacity-70 group-hover:opacity-90 transition-all duration-500"></div>
               
               {/* Secondary glow layer */}
-              <div className="absolute -inset-6 bg-gradient-radial from-orange-500/25 via-orange-400/15 to-transparent rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-700" />
+              <div className="absolute -inset-6 bg-gradient-radial from-cyan-500/25 via-cyan-400/15 to-transparent rounded-full blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-700" />
               
               {/* Frame container */}
-              <div className="relative rounded-xl overflow-hidden border border-orange-500/40 shadow-xl shadow-orange-500/20 bg-gray-900/50 p-4 group-hover:border-orange-400/60 group-hover:shadow-orange-500/30 transition-all duration-500 backdrop-blur-sm">
+              <div className="relative rounded-xl overflow-hidden border border-cyan-500/40 shadow-xl shadow-cyan-500/20 bg-gray-900/50 p-4 group-hover:border-cyan-400/60 group-hover:shadow-cyan-500/30 transition-all duration-500 backdrop-blur-sm">
                 <img
                   src="/redd.png"
                   alt="Infographic showing Reddit's dominance in AI and Search"
@@ -152,7 +152,7 @@ export function WhyReddit() {
                 <X size={32} />
               </button>
               
-              <div className="relative overflow-hidden rounded-xl border border-orange-400/30">
+              <div className="relative overflow-hidden rounded-xl border border-cyan-400/30">
                 <img
                   src="/redd.png"
                   alt="Reddit dominance infographic - Full view"

@@ -44,13 +44,13 @@ export const Header = () => {
           <div className="flex items-center">
             <Link className="flex items-center gap-3 hover:opacity-80 transition-opacity" href="/">
               <span
-                className={`text-[24px] font-black bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent ${poppins.className}`}
+                className={`text-[24px] font-black text-[#11DFFF] ${poppins.className}`}
                 style={{
                   fontFamily: '"Poppins", sans-serif',
                   fontWeight: '900'
                 }}
               >
-                RedLead
+                Gusto Sales Cloud
               </span>
             </Link>
           </div>
@@ -143,7 +143,7 @@ export const Header = () => {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`text-xl text-white hover:text-orange-500 transition-colors font-semibold ${poppins.className}`}
+                className={`text-xl text-white hover:text-cyan-400 transition-colors font-semibold ${poppins.className}`}
                 style={{
                   fontFamily: '"Poppins", sans-serif',
                   fontWeight: '600'

@@ -144,7 +144,7 @@ export default function MarketInsightsPage({ activeCampaignId }: MarketInsightsP
     return (
       <div className="min-h-screen bg-[#0f1419] flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-8 h-8 text-[#ff4500] animate-spin mx-auto mb-4" />
+          <Loader className="w-8 h-8 text-[#11DFFF] animate-spin mx-auto mb-4" />
           <p className="text-gray-400">Loading market insights...</p>
         </div>
       </div>
@@ -261,13 +261,13 @@ const InsightCard = ({ insight, onAddCompetitor, onUpdateStatus, isProcessing, g
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-[#1a1a1b] rounded-lg border border-[#343536] overflow-hidden hover:border-[#ff4500] transition-colors"
+      className="bg-[#1a1a1b] rounded-lg border border-[#343536] overflow-hidden hover:border-[#11DFFF] transition-colors"
     >
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#ff4500]/10 rounded-lg flex items-center justify-center">
-              <Building className="w-5 h-5 text-[#ff4500]" />
+            <div className="w-10 h-10 bg-[#11DFFF]/10 rounded-lg flex items-center justify-center">
+              <Building className="w-5 h-5 text-[#11DFFF]" />
             </div>
             <div>
               <h3 className="font-semibold text-white">{insight.discoveredCompetitorName}</h3>
@@ -293,7 +293,7 @@ const InsightCard = ({ insight, onAddCompetitor, onUpdateStatus, isProcessing, g
             href={insight.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-[#ff4500] hover:text-[#ff6b35] transition-colors"
+            className="inline-flex items-center gap-1 text-sm text-[#11DFFF] hover:text-[#0dcddd] transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             View Source
@@ -305,7 +305,7 @@ const InsightCard = ({ insight, onAddCompetitor, onUpdateStatus, isProcessing, g
             <button
               onClick={onAddCompetitor}
               disabled={isProcessing}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#ff4500] text-white rounded-lg hover:bg-[#ff5722] transition-colors disabled:opacity-50 text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#11DFFF] text-white rounded-lg hover:bg-[#0dcddd] transition-colors disabled:opacity-50 text-sm"
             >
               {isProcessing ? (
                 <Loader className="w-4 h-4 animate-spin" />

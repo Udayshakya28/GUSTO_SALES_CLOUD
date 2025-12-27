@@ -7,7 +7,7 @@ import { Resend } from 'resend';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-const FROM_NAME = process.env.RESEND_FROM_NAME || 'RedLead';
+const FROM_NAME = process.env.RESEND_FROM_NAME || 'Gusto Sales Cloud';
 
 export interface EmailOptions {
   to: string;
@@ -59,18 +59,18 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to RedLead</title>
+        <title>Welcome to Gusto Sales Cloud</title>
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to RedLead! 🎉</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to Gusto Sales Cloud! 🎉</h1>
         </div>
         
         <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
           <p style="font-size: 16px; margin-bottom: 20px;">Hi ${name},</p>
           
           <p style="font-size: 16px; margin-bottom: 20px;">
-            We're thrilled to have you join RedLead! You're now part of a community that helps businesses discover and engage with high-quality leads on Reddit.
+            We're thrilled to have you join Gusto Sales Cloud! You're now part of a community that helps businesses discover and engage with high-quality leads on Reddit.
           </p>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -101,7 +101,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
         </div>
         
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-          <p>You're receiving this email because you signed up for RedLead.</p>
+          <p>You're receiving this email because you signed up for Gusto Sales Cloud.</p>
         </div>
       </body>
     </html>
@@ -109,7 +109,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
 
   return await sendEmail({
     to: email,
-    subject: 'Welcome to RedLead! 🎉',
+    subject: 'Welcome to Gusto Sales Cloud! 🎉',
     html,
   });
 }
@@ -138,7 +138,7 @@ export async function sendSignInEmail(email: string, firstName?: string, ipAddre
           <p style="font-size: 16px; margin-bottom: 20px;">Hi ${name},</p>
           
           <p style="font-size: 16px; margin-bottom: 20px;">
-            We noticed a recent sign-in to your RedLead account ${location}.
+            We noticed a recent sign-in to your Gusto Sales Cloud account ${location}.
           </p>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -170,7 +170,7 @@ export async function sendSignInEmail(email: string, firstName?: string, ipAddre
 
   return await sendEmail({
     to: email,
-    subject: 'Sign-in Notification - RedLead',
+    subject: 'Sign-in Notification - Gusto Sales Cloud',
     html,
   });
 }
@@ -226,7 +226,7 @@ export async function sendLeadDiscoveryEmail(
           
           <p style="font-size: 14px; color: #666; margin-top: 30px;">
             Best regards,<br>
-            The RedLead Team
+            The Gusto Sales Cloud Team
           </p>
         </div>
       </body>

@@ -17,13 +17,13 @@ const geistMono = Geist_Mono({
 
 // --- MODIFIED METADATA OBJECT ---
 export const metadata: Metadata = {
-  title: "RedLead - AI-Powered Reddit Lead Generation",
-  description: "Revolutionize your lead generation with RedLead's AI-driven platform, leveraging Reddit's vast community to find warm prospects and automate outreach.",
+  title: "Gusto Sales Cloud - AI-Powered Reddit Lead Generation",
+  description: "Revolutionize your lead generation with Gusto Sales Cloud's AI-driven platform, leveraging Reddit's vast community to find warm prospects and automate outreach.",
   openGraph: {
-    title: "RedLead - AI-Powered Reddit Lead Generation",
+    title: "Gusto Sales Cloud - AI-Powered Reddit Lead Generation",
     description: "Find warm prospects and automate outreach with AI.",
     url: "https://www.redlead.net",
-    siteName: "RedLead",
+    siteName: "Gusto Sales Cloud",
     images: [
       {
         url: "https://www.redlead.net/Landing.png",
