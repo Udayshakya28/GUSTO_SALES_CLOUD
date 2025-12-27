@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 
 // --- MODIFIED METADATA OBJECT ---
 export const metadata: Metadata = {
+<<<<<<< HEAD
   title: "RedLead - AI-Powered Reddit Lead Generation",
   description: "Revolutionize your lead generation with RedLead's AI-driven platform, leveraging Reddit's vast community to find warm prospects and automate outreach.",
   openGraph: {
@@ -24,12 +25,44 @@ export const metadata: Metadata = {
     description: "Find warm prospects and automate outreach with AI.",
     url: "https://www.redlead.net",
     siteName: "RedLead",
+=======
+  title: "Gusto Sales Cloud - AI That Turns Social Signals Into Real Customers",
+  description:
+    "AI-powered Reddit lead generation tool. Find qualified leads with AI-generated responses. Get started for free.",
+  generator: "v0.app",
+  icons: {
+    icon: [
+      {
+        url: "/icon-light-32x32.png",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/icon-dark-32x32.png",
+        media: "(prefers-color-scheme: dark)",
+      },
+      {
+        url: "/icon.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    title: "Gusto Sales Cloud - AI That Turns Social Signals Into Real Customers",
+    description: "Find warm prospects and automate outreach with AI.",
+    url: "https://www.redlead.net",
+    siteName: "Gusto Sales Cloud",
+>>>>>>> landing/main
     images: [
       {
         url: "https://www.redlead.net/Landing.png",
         width: 1200,
         height: 630,
+<<<<<<< HEAD
         alt: "RedLead Application Dashboard",
+=======
+        alt: "Gusto Sales Cloud Dashboard",
+>>>>>>> landing/main
       },
     ],
     locale: "en_US",
@@ -37,7 +70,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+<<<<<<< HEAD
     title: "RedLead - AI-Powered Reddit Lead Generation",
+=======
+    title: "Gusto Sales Cloud - AI That Turns Social Signals Into Real Customers",
+>>>>>>> landing/main
     description: "Find warm prospects and automate outreach with AI.",
     images: ["https://www.redlead.net/Landing.png"],
   },

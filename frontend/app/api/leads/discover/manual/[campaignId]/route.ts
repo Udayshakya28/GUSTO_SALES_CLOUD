@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+<<<<<<< HEAD
 import { getGroqClient, handleGroqError } from '@/lib/groq';
+=======
+import { generateScore } from '@/lib/ai';
+>>>>>>> landing/main
 import { fetchWithProxy, isProxyEnabled, getProxyStatus } from '@/lib/proxy';
 import { prisma, isPrismaAvailable } from '@/lib/prisma';
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -26,6 +30,7 @@ export async function OPTIONS(request: Request) {
     });
 }
 
+<<<<<<< HEAD
 async function calculateOpportunityScore(title: string, body: string, keywords: string[]): Promise<number> {
     // Get client at runtime to ensure env vars are loaded
     const groq = getGroqClient();
@@ -47,6 +52,9 @@ async function calculateOpportunityScore(title: string, body: string, keywords: 
         return handleGroqError(e, 50);
     }
 }
+=======
+// Local score calculation removed in favor of lib/ai.ts generateScore
+>>>>>>> landing/main
 
 export async function POST(
     request: Request,
@@ -54,7 +62,11 @@ export async function POST(
 ) {
     try {
         const { campaignId } = await params;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         if (!campaignId) {
             return NextResponse.json({ message: 'Campaign ID is required' }, { status: 400 });
         }
@@ -67,7 +79,11 @@ export async function POST(
 
         // Check campaign in both Prisma and in-memory db
         let campaign: any = null;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             try {
                 campaign = await prisma.campaign.findUnique({
@@ -83,7 +99,11 @@ export async function POST(
                 console.warn('⚠️ Error checking campaign in Prisma:', e);
             }
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Fallback to in-memory db
         if (!campaign) {
             campaign = db.getCampaign(campaignId);
@@ -128,7 +148,11 @@ export async function POST(
                 console.error(`❌ Campaign not found: ${campaignId}`);
                 // Return detailed error for debugging
                 const allCampaigns = db.getCampaigns();
+<<<<<<< HEAD
                 return NextResponse.json({ 
+=======
+                return NextResponse.json({
+>>>>>>> landing/main
                     message: 'Campaign not found',
                     campaignId,
                     availableCampaigns: allCampaigns.map(c => ({ id: c.id, name: c.name })),
@@ -136,7 +160,11 @@ export async function POST(
                 }, { status: 404 });
             }
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Handle userId mismatch - update campaign or use in-memory version
         if (campaign && campaign.userId && campaign.userId !== userId) {
             console.warn(`⚠️ Campaign userId mismatch:`, {
@@ -144,7 +172,11 @@ export async function POST(
                 currentUserId: userId,
                 campaignSource: campaign.id ? 'prisma' : 'in-memory'
             });
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> landing/main
             // Try to update campaign in Prisma if it exists there
             if (isPrismaAvailable() && prisma && process.env.DATABASE_URL && campaign.id) {
                 try {
@@ -198,7 +230,11 @@ export async function POST(
                 console.log(`✅ Updated in-memory campaign userId to ${userId}`);
             }
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // If campaign doesn't exist in Prisma but exists in-memory, create it in Prisma
         if (!campaign && isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             const inMemoryCampaign = db.getCampaign(campaignId);
@@ -227,21 +263,36 @@ export async function POST(
                 }
             }
         }
+<<<<<<< HEAD
         
         // Final check - ensure campaign has correct userId (safety net)
         if (!campaign) {
             return NextResponse.json({ 
+=======
+
+        // Final check - ensure campaign has correct userId (safety net)
+        if (!campaign) {
+            return NextResponse.json({
+>>>>>>> landing/main
                 message: 'Campaign not found after all checks',
                 campaignId
             }, { status: 404 });
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Force userId to match current user (final safety check)
         if (campaign.userId !== userId) {
             console.warn(`⚠️ Final safety check: Forcing userId from ${campaign.userId} to ${userId}`);
             campaign.userId = userId;
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         console.log(`✅ Campaign validated:`, {
             campaignId,
             userId: campaign.userId,
@@ -250,16 +301,27 @@ export async function POST(
         });
 
         const { targetSubreddits, generatedKeywords } = campaign;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         console.log(`📋 Campaign config:`, {
             campaignId,
             targetSubreddits: targetSubreddits?.length || 0,
             generatedKeywords: generatedKeywords?.length || 0,
         });
+<<<<<<< HEAD
         
         if (!targetSubreddits || targetSubreddits.length === 0) {
             console.error(`❌ No target subreddits configured for campaign: ${campaignId}`);
             return NextResponse.json({ 
+=======
+
+        if (!targetSubreddits || targetSubreddits.length === 0) {
+            console.error(`❌ No target subreddits configured for campaign: ${campaignId}`);
+            return NextResponse.json({
+>>>>>>> landing/main
                 message: 'No target subreddits configured',
                 campaignId,
                 campaign: { id: campaign.id, name: campaign.name }
@@ -268,7 +330,11 @@ export async function POST(
 
         if (!generatedKeywords || generatedKeywords.length === 0) {
             console.error(`❌ No keywords configured for campaign: ${campaignId}`);
+<<<<<<< HEAD
             return NextResponse.json({ 
+=======
+            return NextResponse.json({
+>>>>>>> landing/main
                 message: 'No keywords configured',
                 campaignId,
                 campaign: { id: campaign.id, name: campaign.name }
@@ -290,14 +356,22 @@ export async function POST(
             numComments: number;
             upvoteRatio: number;
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         const discoveredLeads: DiscoveredLead[] = [];
         const proxyStatus = getProxyStatus();
         const diagnostics: any = {
             subredditsSearched: [],
             errors: [],
             postsFound: 0,
+<<<<<<< HEAD
             groqAvailable: !!getGroqClient(),
+=======
+            groqAvailable: !!process.env.GROQ_API_KEY,
+>>>>>>> landing/main
             groqModel: process.env.GROQ_MODEL || "llama3-70b-8192",
             proxyEnabled: proxyStatus.enabled,
             proxyType: proxyStatus.type,
@@ -311,14 +385,22 @@ export async function POST(
         for (const sub of targetSubreddits) {
             try {
                 const query = generatedKeywords[0];
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Try multiple endpoints - Reddit may block search.json but allow other endpoints
                 const endpoints = [
                     { url: `https://www.reddit.com/r/${sub}/new.json?limit=25`, type: 'new' },
                     { url: `https://www.reddit.com/r/${sub}/hot.json?limit=25`, type: 'hot' },
                     { url: `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&limit=25`, type: 'search' },
                 ];
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 let res: Response | null = null;
                 let successfulEndpoint: string = '';
                 let lastError: any = null;
@@ -326,6 +408,7 @@ export async function POST(
                 // Create abort controller for timeout
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for Vercel
+<<<<<<< HEAD
                 
                 // Reddit's public API requires a proper User-Agent header
                 // Reddit blocks requests without proper User-Agent or with suspicious patterns
@@ -333,10 +416,20 @@ export async function POST(
                 const userAgent = process.env.REDDIT_USER_AGENT || 
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
                 
+=======
+
+                // Reddit's public API requires a proper User-Agent header
+                // Reddit blocks requests without proper User-Agent or with suspicious patterns
+                // Use a browser-like User-Agent to avoid 403 blocks
+                const userAgent = process.env.REDDIT_USER_AGENT ||
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+>>>>>>> landing/main
                 // Add a small delay between subreddits to avoid rate limiting
                 if (diagnostics.subredditsSearched.length > 0) {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
+<<<<<<< HEAD
                 
                 // Try each endpoint until one works
                 for (const endpoint of endpoints) {
@@ -357,6 +450,28 @@ export async function POST(
                         
                         res = await fetchFunction(endpoint.url, { 
                             headers: { 
+=======
+
+                // Try each endpoint until one works
+                for (const endpoint of endpoints) {
+                    try {
+                        diagnostics.subredditsSearched.push({
+                            subreddit: sub,
+                            query,
+                            url: endpoint.url,
+                            type: endpoint.type
+                        });
+
+                        // Create abort controller for timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                        // Use proxy if enabled, otherwise direct fetch
+                        const fetchFunction = isProxyEnabled() ? fetchWithProxy : fetch;
+
+                        res = await fetchFunction(endpoint.url, {
+                            headers: {
+>>>>>>> landing/main
                                 'User-Agent': userAgent,
                                 'Accept': 'application/json',
                                 'Accept-Language': 'en-US,en;q=0.9',
@@ -367,17 +482,29 @@ export async function POST(
                             cache: 'no-store',
                             redirect: 'follow',
                         });
+<<<<<<< HEAD
                         
                         clearTimeout(timeoutId);
                         
+=======
+
+                        clearTimeout(timeoutId);
+
+>>>>>>> landing/main
                         if (res.ok) {
                             successfulEndpoint = endpoint.url;
                             console.log(`✅ Successfully fetched from r/${sub} using ${endpoint.type} endpoint`);
                             break; // Success, exit the loop
                         } else {
+<<<<<<< HEAD
                             lastError = { 
                                 status: res.status, 
                                 statusText: res.statusText, 
+=======
+                            lastError = {
+                                status: res.status,
+                                statusText: res.statusText,
+>>>>>>> landing/main
                                 url: endpoint.url,
                                 type: endpoint.type
                             };
@@ -389,7 +516,11 @@ export async function POST(
                         continue; // Try next endpoint
                     }
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // If all endpoints failed
                 if (!res || !res.ok) {
                     const errorText = lastError?.error || `All endpoints failed (last: ${lastError?.status || 'unknown'})`;
@@ -400,15 +531,25 @@ export async function POST(
                         endpoints: endpoints.map(e => `${e.type}: ${e.url}`),
                         lastError
                     });
+<<<<<<< HEAD
                     diagnostics.errors.push({ 
                         subreddit: sub, 
                         error: errorMsg, 
+=======
+                    diagnostics.errors.push({
+                        subreddit: sub,
+                        error: errorMsg,
+>>>>>>> landing/main
                         status: res?.status || 0,
                         statusText: res?.statusText || errorText,
                         endpoints: endpoints.map(e => e.type),
                         allBlocked: res?.status === 403
                     });
+<<<<<<< HEAD
                     
+=======
+
+>>>>>>> landing/main
                     if (res?.status === 403) {
                         console.warn(`⚠️ Reddit blocked all endpoints for r/${sub} - Vercel IP blocking`);
                     }
@@ -416,7 +557,11 @@ export async function POST(
                 }
 
                 const data = await res.json();
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 if (!data || !data.data || !data.data.children) {
                     const warnMsg = `Invalid response format for r/${sub}`;
                     console.warn(warnMsg);
@@ -425,31 +570,78 @@ export async function POST(
                 }
 
                 const posts = data.data.children;
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Filter posts by keywords if we're using new/hot endpoints (not search)
                 // Search endpoint already filters by query, but new/hot don't
                 let filteredPosts = posts;
                 if (!successfulEndpoint.includes('search.json')) {
                     // Filter posts that match any keyword
                     const keywordLower = generatedKeywords.map((k: string) => k.toLowerCase());
+<<<<<<< HEAD
+=======
+
+                    console.log(`🔍 Filtering with keywords:`, keywordLower);
+
+>>>>>>> landing/main
                     filteredPosts = posts.filter((child: any) => {
                         if (!child?.data) return false;
                         const post = child.data;
                         const titleLower = (post.title || '').toLowerCase();
                         const bodyLower = (post.selftext || '').toLowerCase();
                         const text = `${titleLower} ${bodyLower}`;
+<<<<<<< HEAD
                         return keywordLower.some((keyword: string) => text.includes(keyword));
                     });
                     console.log(`📊 Filtered ${filteredPosts.length} posts from ${posts.length} total for r/${sub} using keywords`);
                 }
                 
+=======
+
+                        // Robust matching:
+                        // 1. Direct substring match
+                        // 2. Token-based match (all words in a keyword phrase must appear)
+                        const isMatch = keywordLower.some((keyword: string) => {
+                            // Direct match
+                            if (text.includes(keyword)) return true;
+
+                            // Token match (e.g. "Japan Jobs" matches "Jobs in Japan")
+                            const tokens = keyword.split(' ').filter(t => t.length > 2); // Ignore small words
+                            if (tokens.length > 1) {
+                                return tokens.every(token => text.includes(token));
+                            }
+                            return false;
+                        });
+
+                        // Log first few failures for debugging
+                        if (!isMatch && Math.random() < 0.05) {
+                            console.log(`❌ No match for: "${titleLower.substring(0, 50)}..."`);
+                        }
+
+                        return isMatch;
+                    });
+                    console.log(`📊 Filtered ${filteredPosts.length} posts from ${posts.length} total for r/${sub} using keywords`);
+                }
+
+>>>>>>> landing/main
                 diagnostics.postsFound += filteredPosts.length;
 
                 for (const child of filteredPosts) {
                     if (!child || !child.data) continue;
+<<<<<<< HEAD
                     
                     const post = child.data;
                     const score = await calculateOpportunityScore(post.title, post.selftext || '', generatedKeywords);
+=======
+
+                    const post = child.data;
+
+                    // Use new AI scoring
+                    const { score, intent } = await generateScore(post.title, post.selftext || '', generatedKeywords);
+>>>>>>> landing/main
 
                     discoveredLeads.push({
                         redditId: post.id,
@@ -459,7 +651,11 @@ export async function POST(
                         url: `https://reddit.com${post.permalink}`,
                         body: post.selftext || '',
                         status: 'new' as const,
+<<<<<<< HEAD
                         intent: 'unclassified',
+=======
+                        intent: intent || 'unclassified',
+>>>>>>> landing/main
                         opportunityScore: score,
                         postedAt: new Date(post.created_utc * 1000), // Convert Unix timestamp to Date
                         type: 'DIRECT_LEAD' as const,
@@ -475,11 +671,80 @@ export async function POST(
             }
         }
 
+<<<<<<< HEAD
+=======
+        // --- GLOBAL SEARCH (Top Keyword) ---
+        // Search across all of Reddit for the top keyword to find missed opportunities
+        try {
+            if (generatedKeywords && generatedKeywords.length > 0) {
+                const globalQuery = generatedKeywords[0];
+                console.log(`🌍 Performing Global Search for: "${globalQuery}"`);
+
+                // Use a generic proxy-friendly endpoint if possible, or just standard search
+                const globalUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(globalQuery)}&sort=new&limit=25`;
+
+                // Use proxy if enabled
+                const fetchFunction = isProxyEnabled() ? fetchWithProxy : fetch;
+
+                // User Agent
+                const userAgent = process.env.REDDIT_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
+
+                const res = await fetchFunction(globalUrl, {
+                    headers: { 'User-Agent': userAgent }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const posts = data?.data?.children || [];
+                    console.log(`🌍 Global search found ${posts.length} potential posts`);
+
+                    for (const child of posts) {
+                        const post = child?.data;
+                        if (!post) continue;
+
+                        // Deduplicate: Check if we already found this post in subreddit search
+                        if (discoveredLeads.some(l => l.redditId === post.id)) continue;
+
+                        // Score it
+                        const { score, intent } = await generateScore(post.title, post.selftext || '', generatedKeywords);
+
+                        // Only add if relevant enough (>40)
+                        if (score > 40) {
+                            discoveredLeads.push({
+                                redditId: post.id,
+                                title: post.title,
+                                author: post.author,
+                                subreddit: post.subreddit,
+                                url: `https://reddit.com${post.permalink}`,
+                                body: post.selftext || '',
+                                status: 'new' as const,
+                                intent: intent || 'unclassified',
+                                opportunityScore: score,
+                                postedAt: new Date(post.created_utc * 1000),
+                                type: 'DIRECT_LEAD' as const,
+                                numComments: post.num_comments,
+                                upvoteRatio: post.upvote_ratio
+                            });
+                        }
+                    }
+                } else {
+                    console.warn(`⚠️ Global search failed: ${res.status}`);
+                }
+            }
+        } catch (globalErr: any) {
+            console.error(`❌ Global search error:`, globalErr.message);
+        }
+
+>>>>>>> landing/main
         // Save leads to Prisma database (with fallback to in-memory)
         let savedCount = 0;
         let skippedCount = 0;
         let usedPrisma = false;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Debug: Log Prisma availability
         console.log('🔍 Prisma Diagnostics:', {
             isPrismaAvailable: isPrismaAvailable(),
@@ -488,13 +753,21 @@ export async function POST(
             databaseUrlPreview: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.substring(0, 30)}...` : 'NOT SET',
             discoveredLeadsCount: discoveredLeads.length
         });
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Try Prisma first if available and DATABASE_URL is set
         if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
             try {
                 usedPrisma = true;
                 console.log('💾 Attempting to save leads to Prisma database...');
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Test connection first
                 try {
                     await prisma.$connect();
@@ -503,19 +776,31 @@ export async function POST(
                     console.error('❌ Prisma connection failed:', connError.message);
                     throw connError;
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Ensure User exists in database (required for foreign key constraint)
                 try {
                     const existingUser = await prisma.user.findUnique({
                         where: { id: userId }
                     });
+<<<<<<< HEAD
                     
+=======
+
+>>>>>>> landing/main
                     if (!existingUser) {
                         console.log(`📝 User ${userId} doesn't exist, creating it...`);
                         // Get email from Clerk if available
                         const clerkUser = await currentUser();
                         const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || `${userId}@clerk.local`;
+<<<<<<< HEAD
                         
+=======
+
+>>>>>>> landing/main
                         await prisma.user.create({
                             data: {
                                 id: userId,
@@ -537,18 +822,30 @@ export async function POST(
                         throw userError;
                     }
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Ensure Campaign exists in database - CRITICAL: Must exist before saving leads
                 let campaignExists = false;
                 try {
                     const existingCampaign = await prisma.campaign.findUnique({
                         where: { id: campaignId }
                     });
+<<<<<<< HEAD
                     
                     if (!existingCampaign) {
                         console.log(`📝 Campaign ${campaignId} doesn't exist in Prisma, creating it...`);
                         const inMemoryCampaign = db.getCampaign(campaignId);
                         
+=======
+
+                    if (!existingCampaign) {
+                        console.log(`📝 Campaign ${campaignId} doesn't exist in Prisma, creating it...`);
+                        const inMemoryCampaign = db.getCampaign(campaignId);
+
+>>>>>>> landing/main
                         await prisma.campaign.create({
                             data: {
                                 id: campaignId,
@@ -567,7 +864,11 @@ export async function POST(
                     } else {
                         console.log(`✅ Campaign ${campaignId} exists in Prisma`);
                         campaignExists = true;
+<<<<<<< HEAD
                         
+=======
+
+>>>>>>> landing/main
                         // Update campaign userId if mismatch
                         if (existingCampaign.userId !== userId) {
                             await prisma.campaign.update({
@@ -582,7 +883,11 @@ export async function POST(
                     // This is critical - if campaign doesn't exist, leads can't be saved
                     throw new Error(`Campaign ${campaignId} must exist in database before saving leads: ${campaignError.message}`);
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Verify campaign exists before proceeding - CRITICAL CHECK
                 if (!campaignExists) {
                     const doubleCheck = await prisma.campaign.findUnique({
@@ -597,7 +902,11 @@ export async function POST(
                 } else {
                     console.log(`✅ Campaign ${campaignId} verified to exist before saving leads`);
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Use Prisma to save leads (upsert to avoid duplicates)
                 for (const lead of discoveredLeads) {
                     try {
@@ -630,7 +939,11 @@ export async function POST(
                                 type: lead.type,
                             }
                         });
+<<<<<<< HEAD
                         
+=======
+
+>>>>>>> landing/main
                         // Log first few saves for debugging
                         if (savedCount < 3) {
                             console.log(`💾 Saved lead ${savedCount + 1}:`, {
@@ -662,35 +975,59 @@ export async function POST(
                         }
                     }
                 }
+<<<<<<< HEAD
                 
                 console.log(`💾 Saved ${savedCount} leads to Prisma database (${skippedCount} duplicates skipped)`);
                 
+=======
+
+                console.log(`💾 Saved ${savedCount} leads to Prisma database (${skippedCount} duplicates skipped)`);
+
+>>>>>>> landing/main
                 // Update campaign timestamp
                 await prisma.campaign.update({
                     where: { id: campaignId },
                     data: { lastManualDiscoveryAt: new Date() }
                 });
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Send email notification if leads were discovered and notifications are enabled
                 if (savedCount > 0) {
                     try {
                         const { sendLeadDiscoveryEmail, isEmailNotificationsEnabled } = await import('@/lib/email');
+<<<<<<< HEAD
                         
                         const settings = await isEmailNotificationsEnabled(userId);
                         
+=======
+
+                        const settings = await isEmailNotificationsEnabled(userId);
+
+>>>>>>> landing/main
                         if (settings.enabled && settings.email) {
                             // Get user's first name for personalization
                             const user = await currentUser();
                             const firstName = user?.firstName || undefined;
                             const campaignName = campaign?.name || 'Your Campaign';
+<<<<<<< HEAD
                             
+=======
+
+>>>>>>> landing/main
                             const result = await sendLeadDiscoveryEmail(
                                 settings.email,
                                 campaignName,
                                 savedCount,
                                 firstName
                             );
+<<<<<<< HEAD
                             
+=======
+
+>>>>>>> landing/main
                             if (result.success) {
                                 console.log(`✅ Lead discovery email sent to ${settings.email}`);
                             } else {
@@ -704,24 +1041,40 @@ export async function POST(
                         // Don't fail the discovery if email fails
                     }
                 }
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Verify leads were saved - check multiple ways
                 const verifyLeadsAll = await prisma.lead.count({
                     where: { campaignId: campaignId }
                 });
                 const verifyLeadsWithUserId = await prisma.lead.count({
+<<<<<<< HEAD
                     where: { 
+=======
+                    where: {
+>>>>>>> landing/main
                         campaignId: campaignId,
                         userId: userId
                     }
                 });
                 const verifyLeadsWithoutUserId = await prisma.lead.count({
+<<<<<<< HEAD
                     where: { 
+=======
+                    where: {
+>>>>>>> landing/main
                         campaignId: campaignId,
                         userId: { not: userId }
                     }
                 });
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 console.log(`✅ Verification counts:`, {
                     totalInCampaign: verifyLeadsAll,
                     withCurrentUserId: verifyLeadsWithUserId,
@@ -729,7 +1082,11 @@ export async function POST(
                     campaignId,
                     currentUserId: userId
                 });
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
                 // Log sample of saved leads - check both with and without userId filter
                 const sampleLeadsAll = await prisma.lead.findMany({
                     where: { campaignId: campaignId },
@@ -737,31 +1094,50 @@ export async function POST(
                     select: { id: true, redditId: true, userId: true, title: true, campaignId: true }
                 });
                 const sampleLeadsWithUserId = await prisma.lead.findMany({
+<<<<<<< HEAD
                     where: { 
+=======
+                    where: {
+>>>>>>> landing/main
                         campaignId: campaignId,
                         userId: userId
                     },
                     take: 5,
                     select: { id: true, redditId: true, userId: true, title: true, campaignId: true }
                 });
+<<<<<<< HEAD
                 
                 console.log(`📋 Sample leads (all in campaign):`, sampleLeadsAll);
                 console.log(`📋 Sample leads (with userId ${userId}):`, sampleLeadsWithUserId);
                 
+=======
+
+                console.log(`📋 Sample leads (all in campaign):`, sampleLeadsAll);
+                console.log(`📋 Sample leads (with userId ${userId}):`, sampleLeadsWithUserId);
+
+>>>>>>> landing/main
                 // Check campaign details
                 const campaignCheck = await prisma.campaign.findUnique({
                     where: { id: campaignId },
                     select: { id: true, userId: true, name: true }
                 });
                 console.log(`📋 Campaign details:`, campaignCheck);
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> landing/main
             } catch (prismaError: any) {
                 console.error('❌ Prisma error saving leads:', prismaError);
                 usedPrisma = false;
                 // Fall through to in-memory fallback
             }
         }
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> landing/main
         // Fallback to in-memory database if Prisma failed or not available
         if (!usedPrisma) {
             console.log('⚠️ Using in-memory database (Prisma not available or failed)');
@@ -779,14 +1155,20 @@ export async function POST(
                 numComments: l.numComments || 0,
                 upvoteRatio: l.upvoteRatio || 0
             })));
+<<<<<<< HEAD
             db.updateCampaign(campaignId, { 
                 lastManualDiscoveryAt: new Date().toISOString() 
+=======
+            db.updateCampaign(campaignId, {
+                lastManualDiscoveryAt: new Date().toISOString()
+>>>>>>> landing/main
             });
             savedCount = savedLeads.length;
             console.log(`💾 Saved ${savedCount} leads to in-memory database`);
         }
 
         // Check if all requests were blocked
+<<<<<<< HEAD
         const allBlocked = diagnostics.errors.length > 0 && 
                           diagnostics.errors.every((e: any) => e.status === 403);
         
@@ -797,6 +1179,18 @@ export async function POST(
         // Ensure all data is serializable
         const responseData = {
             message: allBlocked 
+=======
+        const allBlocked = diagnostics.errors.length > 0 &&
+            diagnostics.errors.every((e: any) => e.status === 403);
+
+        // Count how many endpoints were tried
+        const endpointsTried = diagnostics.subredditsSearched?.length || 0;
+        const totalEndpointsAttempted = endpointsTried * 3; // 3 endpoints per subreddit
+
+        // Ensure all data is serializable
+        const responseData = {
+            message: allBlocked
+>>>>>>> landing/main
                 ? `Discovery complete but Reddit API blocked all ${totalEndpointsAttempted} endpoint attempts (403). Reddit blocks requests from cloud providers like Vercel. Solutions: 1) Use Reddit's official OAuth API (requires app registration), 2) Use a proxy service, or 3) Run discovery locally where it works.`
                 : 'Discovery complete',
             count: discoveredLeads.length,
@@ -819,11 +1213,19 @@ export async function POST(
         console.error('Discovery route error:', error);
         const origin = request.headers.get('origin');
         return NextResponse.json(
+<<<<<<< HEAD
             { 
                 message: 'Discovery failed', 
                 error: error.message || 'Unknown error occurred' 
             }, 
             { 
+=======
+            {
+                message: 'Discovery failed',
+                error: error.message || 'Unknown error occurred'
+            },
+            {
+>>>>>>> landing/main
                 status: 500,
                 headers: {
                     'Access-Control-Allow-Origin': origin || '*',

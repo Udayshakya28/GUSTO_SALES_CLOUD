@@ -7,6 +7,10 @@ interface GlareCardProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+<<<<<<< HEAD
+=======
+  
+>>>>>>> landing/main
 }
 
 export const GlareCard: React.FC<GlareCardProps> = ({ children, className, onClick }) => {

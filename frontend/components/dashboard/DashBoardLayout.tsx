@@ -97,7 +97,11 @@ export const DashboardLayout = () => {
     try {
       const token = await getToken();
       console.log('🔑 Token obtained:', token ? 'Yes' : 'No');
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       const allLeadsResponse = await api.getLeads(campaignId, {
         intent: intentFilter,
         sortBy,
@@ -105,10 +109,17 @@ export const DashboardLayout = () => {
         page: 1,
         limit: 1000,
       }, token);
+<<<<<<< HEAD
       
       // Type assertion to include debug property
       const response = allLeadsResponse as { data: any; debug?: any };
       
+=======
+
+      // Type assertion to include debug property
+      const response = allLeadsResponse as { data: any; debug?: any };
+
+>>>>>>> landing/main
       console.log('📥 Raw API response:', {
         responseType: typeof response,
         hasData: !!response.data,
@@ -118,7 +129,11 @@ export const DashboardLayout = () => {
         sampleData: Array.isArray(response.data) ? response.data.slice(0, 2) : response.data,
         debug: response.debug || 'No debug info'
       });
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       // Log debug info if available
       if (response.debug) {
         console.log('🔍 API Debug Info:', JSON.stringify(response.debug, null, 2));
@@ -132,12 +147,20 @@ export const DashboardLayout = () => {
           userIdMatch: response.debug.prisma?.userIdMatch
         });
       }
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       // Handle response structure
       // API returns { data: leads[], debug: {...} }
       // api.getLeads returns { data: leads[], debug: {...} }
       let rawLeads: any[] = [];
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       console.log('🔍 Parsing response:', {
         responseType: typeof response,
         responseKeys: Object.keys(response || {}),
@@ -145,7 +168,11 @@ export const DashboardLayout = () => {
         dataIsArray: Array.isArray(response.data),
         dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
       });
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       if (Array.isArray(response.data)) {
         rawLeads = response.data;
         console.log('✅ response.data is an array with', rawLeads.length, 'leads');
@@ -171,7 +198,11 @@ export const DashboardLayout = () => {
           responseSample: JSON.stringify(response).substring(0, 200)
         });
       }
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       console.log('📋 After extracting rawLeads:', {
         isArray: Array.isArray(rawLeads),
         length: rawLeads.length,
@@ -182,12 +213,21 @@ export const DashboardLayout = () => {
           createdAt: rawLeads[0].createdAt
         } : null
       });
+<<<<<<< HEAD
       
       if (rawLeads.length === 0) {
         console.error('❌ No leads extracted from response!');
         console.error('Full response:', JSON.stringify(response, null, 2));
       }
       
+=======
+
+      if (rawLeads.length === 0) {
+        console.warn('⚠️ No leads found in response (this is normal for new campaigns)');
+        // console.log('Full response:', JSON.stringify(response, null, 2));
+      }
+
+>>>>>>> landing/main
       const leadsData: Lead[] = rawLeads
         .filter((lead: any) => lead !== null && lead !== undefined)
         .map((lead: any) => {
@@ -209,14 +249,22 @@ export const DashboardLayout = () => {
             isGoogleRanked: lead.isGoogleRanked ?? false,
           };
         });
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       console.log('✅ Leads mapped:', {
         total: leadsData.length,
         filtered: activeFilter !== "all" ? leadsData.filter((lead) => lead.status === activeFilter).length : leadsData.length,
         filter: activeFilter,
         sampleIds: leadsData.slice(0, 3).map(l => l.id)
       });
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> landing/main
       setAllLeads(leadsData);
 
       if (activeFilter !== "all") {
@@ -422,7 +470,11 @@ export const DashboardLayout = () => {
                       </p>
                     </div>
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
+<<<<<<< HEAD
                       <Button 
+=======
+                      <Button
+>>>>>>> landing/main
                         onClick={() => setShowDeleteModal(true)}
                         className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20
                           h-9 sm:h-10 px-4 text-sm sm:text-base font-semibold transition rounded-lg flex items-center

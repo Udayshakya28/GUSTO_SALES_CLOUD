@@ -297,6 +297,10 @@ export default function FeaturesSection() {
         animate={{ 
           y: [0, 20, 0],
           x: [0, 10, 0],
+<<<<<<< HEAD
+=======
+          
+>>>>>>> landing/main
           opacity: [0.1, 0.2, 0.1]
         }}
         transition={{ 

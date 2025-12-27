@@ -270,3 +270,7 @@ export async function isEmailNotificationsEnabled(userId: string): Promise<{ ena
   }
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> landing/main

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+<<<<<<< HEAD
 import { db } from '@/lib/db';
 import { getGroqClient, isGroqError } from '@/lib/groq';
+=======
+import { generateText } from '@/lib/ai';
+>>>>>>> landing/main
 
 export async function POST(
     request: Request,
@@ -8,6 +12,7 @@ export async function POST(
 ) {
     try {
         const { content } = await request.json();
+<<<<<<< HEAD
         const { leadId } = await context.params;
 
         // Get Groq client at runtime to ensure env vars are loaded
@@ -27,11 +32,17 @@ export async function POST(
                 summary: "AI Summary Unavailable (Groq API key format is invalid. Key should start with 'gsk_')"
             });
         }
+=======
+
+        // Await context params (Next.js 15 requirement)
+        await context.params;
+>>>>>>> landing/main
 
         if (!content) {
             return NextResponse.json({ summary: "No content provided to summarize." });
         }
 
+<<<<<<< HEAD
         const completion = await groq.chat.completions.create({
             model: process.env.GROQ_MODEL || "llama3-70b-8192",
             messages: [
@@ -42,10 +53,33 @@ export async function POST(
         });
 
         const summary = completion.choices[0].message.content || "Could not generate summary.";
+=======
+        const systemPrompt = `You are a helpful human narrator. Summarize the following Reddit post in detail (approx 200-300 words). 
+        Explain the key points, the user's specific problem/context, and any opportunities.
+        Write as if you are explaining it to a busy colleague who needs the full picture without reading the original post. 
+        
+        Constraints:
+        - Output STRICTLY PLAIN TEXT.
+        - ABSOLUTELY NO Markdown formatting: NO bold (**), NO italics, NO headers, NO bullet points.
+        - Write approx 200-300 words in natural paragraphs.`;
+
+        const summary = await generateText({
+            system: systemPrompt,
+            user: content,
+            maxTokens: 800
+        });
+
+        if (!summary) {
+            return NextResponse.json({
+                summary: "AI Summary Unavailable (Generation failed). Please try again."
+            });
+        }
+>>>>>>> landing/main
 
         return NextResponse.json({ summary });
 
     } catch (error: any) {
+<<<<<<< HEAD
         // Handle authentication errors gracefully
         if (isGroqError(error)) {
             console.error('Groq API authentication error:', error.message || error);
@@ -54,6 +88,8 @@ export async function POST(
             });
         }
 
+=======
+>>>>>>> landing/main
         console.error("Summary Generation Error:", error.message || error);
         return NextResponse.json({
             summary: "Could not generate summary. Please try again."
