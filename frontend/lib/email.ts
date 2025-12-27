@@ -96,7 +96,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
           
           <p style="font-size: 14px; color: #666; margin-top: 20px;">
             Best regards,<br>
-            The RedLead Team
+            The Gusto Sales Cloud Team
           </p>
         </div>
         
@@ -161,7 +161,7 @@ export async function sendSignInEmail(email: string, firstName?: string, ipAddre
           
           <p style="font-size: 14px; color: #666; margin-top: 30px;">
             Best regards,<br>
-            The RedLead Team
+            The Gusto Sales Cloud Team
           </p>
         </div>
       </body>

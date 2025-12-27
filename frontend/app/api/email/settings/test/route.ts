@@ -39,7 +39,7 @@ export async function POST() {
         // Send test email
         const result = await sendEmail({
             to: email,
-            subject: 'Test Email from RedLead',
+            subject: 'Test Email from GustoSalesCloud',
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -53,11 +53,11 @@ export async function POST() {
                       <h1 style="color: white; margin: 0;">✅ Test Email</h1>
                     </div>
                     <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-                      <p style="font-size: 16px;">This is a test email from RedLead.</p>
+                      <p style="font-size: 16px;">This is a test email from GustoSalesCloud.</p>
                       <p style="font-size: 16px;">If you received this email, your notification settings are working correctly!</p>
                       <p style="font-size: 14px; color: #666; margin-top: 30px;">
                         Best regards,<br>
-                        The RedLead Team
+                        The GustoSalesCloud Team
                       </p>
                     </div>
                   </body>

@@ -21,7 +21,7 @@ export async function POST(
             event: 'test.event',
             timestamp: new Date().toISOString(),
             data: {
-                message: 'This is a test notification from RedLead.',
+                message: 'This is a test notification from GustoSalesCloud.',
                 lead: {
                     id: 'test_lead_123',
                     title: 'Test Lead Title',
@@ -37,7 +37,7 @@ export async function POST(
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'RedLead-Webhook/1.0'
+                    'User-Agent': 'GustoSalesCloud-Webhook/1.0'
                 },
                 body: JSON.stringify(testPayload)
             });

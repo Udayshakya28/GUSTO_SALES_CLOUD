@@ -108,33 +108,54 @@ export async function POST(request: Request) {
             const { user_id } = evt.data;
             console.log(`🔐 Session created for user: ${user_id}`);
 
-            // Get user details from Clerk
+            // Get user details and send login email
             try {
-                const user = await currentUser();
-                if (user) {
-                    const email = user.emailAddresses?.[0]?.emailAddress;
-                    const firstName = user.firstName || '';
-                    
-                    // Check if email notifications are enabled
-                    const { isEmailNotificationsEnabled } = await import('@/lib/email');
-                    const settings = await isEmailNotificationsEnabled(user_id);
-                    
-                    // Only send sign-in email if notifications are enabled
-                    if (email && settings.enabled) {
-                        const headerPayload = await headers();
-                        const ipAddress = headerPayload.get('x-forwarded-for') || 
-                                        headerPayload.get('x-real-ip') || 
-                                        'Unknown';
-                        
-                        const result = await sendSignInEmail(email, firstName, ipAddress);
-                        if (result.success) {
-                            console.log(`✅ Sign-in email sent to ${email}`);
-                        } else {
-                            console.error(`❌ Failed to send sign-in email: ${result.error}`);
+                let email: string | null = null;
+                let firstName: string | undefined = undefined;
+
+                // Try to get user from database first
+                if (isPrismaAvailable() && prisma && process.env.DATABASE_URL) {
+                    try {
+                        const dbUser = await prisma.user.findUnique({
+                            where: { id: user_id },
+                        });
+                        if (dbUser) {
+                            email = dbUser.email;
+                            firstName = dbUser.firstName || undefined;
                         }
-                    } else {
-                        console.log(`ℹ️ Sign-in email skipped (notifications disabled or no email)`);
+                    } catch (error: any) {
+                        console.error(`❌ Failed to fetch user from database:`, error);
                     }
+                }
+
+                // Fallback to Clerk API if not found in database
+                if (!email) {
+                    try {
+                        const user = await currentUser();
+                        if (user) {
+                            email = user.emailAddresses?.[0]?.emailAddress || null;
+                            firstName = user.firstName || undefined;
+                        }
+                    } catch (error: any) {
+                        console.error(`❌ Failed to fetch user from Clerk:`, error);
+                    }
+                }
+
+                // Send sign-in email on every login
+                if (email) {
+                    const headerPayload = await headers();
+                    const ipAddress = headerPayload.get('x-forwarded-for') || 
+                                    headerPayload.get('x-real-ip') || 
+                                    'Unknown';
+                    
+                    const result = await sendSignInEmail(email, firstName, ipAddress);
+                    if (result.success) {
+                        console.log(`✅ Sign-in email sent to ${email}`);
+                    } else {
+                        console.error(`❌ Failed to send sign-in email: ${result.error}`);
+                    }
+                } else {
+                    console.log(`ℹ️ Sign-in email skipped (no email found for user ${user_id})`);
                 }
             } catch (error: any) {
                 console.error(`❌ Error processing session.created:`, error);
